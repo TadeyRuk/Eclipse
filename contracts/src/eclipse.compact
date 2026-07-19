@@ -1,0 +1,68 @@
+// Eclipse — Gate 0 sum-proof spike
+// Spec: docs/architecture.md §3.1
+// Public surface: docs/privacy-model.md (ledger writes only; disclose at write points)
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+enum Status { Created, Funded, Distributed }
+
+export ledger depositTotal: Uint<64>;
+export ledger recipients: Vector<8, Bytes<32>>;
+export ledger receiptCommitments: Vector<8, Bytes<32>>;
+export ledger status: Status;
+
+// Gate 0 bootstrap: seed Funded ledger so distribute() can be tested without L1 create/fund.
+// Public surface: depositTotal, recipients, status=Funded (privacy-model.md fund/create rows).
+constructor(total: Uint<64>, recipientsIn: Vector<8, Bytes<32>>) {
+  depositTotal = disclose(total);
+  recipients = disclose(recipientsIn);
+  status = Status.Funded;
+}
+
+circuit addAmount(acc: Uint<64>, x: Uint<64>): Uint<64> {
+  return (acc + x) as Uint<64>;
+}
+
+circuit sumVector8(amounts: Vector<8, Uint<64>>): Uint<64> {
+  return fold(addAmount, 0, amounts);
+}
+
+circuit assertLifecycleFunded(): [] {
+  assert(status == Status.Funded, "distribute requires Funded status");
+}
+
+// commitment[i] = H(amount || recipientPk || salt) — architecture §3
+circuit commitRecipient(amount: Uint<64>, recipientPk: Bytes<32>, salt: Bytes<32>): Bytes<32> {
+  return persistentHash<[Uint<64>, Bytes<32>, Bytes<32>]>([amount, recipientPk, salt]);
+}
+
+circuit assertPadding(
+  amounts: Vector<8, Uint<64>>,
+  recipientSlots: Vector<8, Bytes<32>>
+): [] {
+  const zeroPk: Bytes<32> = default<Bytes<32>>;
+  for (const i of [0, 1, 2, 3, 4, 5, 6, 7]) {
+    if (recipientSlots[i] == zeroPk) {
+      assert(amounts[i] == 0, "nonzero amount on unused recipient slot");
+    }
+  }
+}
+
+// Core invariant: sum(amounts) == depositTotal; write commitments; status -> Distributed.
+// Witnesses (private by default): amounts, salts. Ledger writes: receiptCommitments, status.
+export circuit distribute(
+  amounts: Vector<8, Uint<64>>,
+  salts: Vector<8, Bytes<32>>
+): [] {
+  assertLifecycleFunded();
+  assertPadding(amounts, recipients);
+  const total = sumVector8(amounts);
+  assert(total == depositTotal, "sum(amounts) must equal depositTotal");
+
+  const commits = map(commitRecipient, amounts, recipients, salts);
+  // Public surface: receiptCommitments + status=Distributed (privacy-model.md distribute rows)
+  receiptCommitments = disclose(commits);
+  status = Status.Distributed;
+}
