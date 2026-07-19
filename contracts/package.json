@@ -1,0 +1,15 @@
+{
+  "name": "@eclipse/contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "compact compile src/eclipse.compact managed/eclipse",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@midnight-ntwrk/compact-runtime": "^0.16.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

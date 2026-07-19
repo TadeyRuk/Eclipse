@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../",
+  "sources": ["src/eclipse.compact", "compiler/standard-library.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAiBA;;;;;;;;;;MAqCA,AAAA,UAaC;;;;;cAZC,SAA4B;cAC5B,OAA2B;;;;;;;;;;;;;;;;;;;;;;;;;yCAD3B,SAA4B,+BAC5B,OAA2B;;;;;;;;;4CAD3B,SAA4B;4CAC5B,OAA2B;;;OAW5B;;;;GA9CA;EAJD;;;;;UAAY,OAAe;UAAE,cAAkC;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAP/D;;;;;;;;;yEAAqC;IACrC;;;;;;;;;yEAA+C;IAC/C;;;;;;;;;yEAAuD;IACvD;;;;;;;;;yEAA6B;IAK3B;;;;;;;2HAAwB,OAAK;;yEAAjB;IACZ;;;;;;;2HAAsB,cAAY;;yEAAxB;IACV;;;;;;;;;yEAAM;;;;;;;GACP;ECrBD,AAAA,kBAAA;oEAAA;;;EDuBA,AAAA,YAEC,CAFiB,KAAa,EAAE,GAAW;;;;;;cAClC,KAAG,GAAG,GAAC;GAChB;EAED,AAAA,aAEC,CAFkB,SAA4B;;;0BACnB,SAAO;GAClC;EAED,AAAA,wBAEC;oDADQ;;;;;;;;;;;yHAAM;;;;;GACd;EAGD,AAAA,kBAEC,CAFuB,QAAgB,EAAE,aAAsB,EAAE,MAAe;mCACtB,QAAM,EAAE,aAAW,EAAE,MAAI;GACnF;EAED,AAAA,gBAUC,CATC,SAA4B,EAC5B,gBAAoC;UAE9B,QAAsC;qBAC5C,GAIC,EAJD,GAIC;;wCAHK,gBAAc,CAAC,GAAC,GAAK,QAAM;8DACtB,SAAO,CAAC,GAAC;;;6BAFpB,GAIC;;;;;GACF;EAID,AAAA,aAaC,4BAZC,SAA4B,EAC5B,OAA2B;;0BAGb,SAAO;kDAAE;;;;;;;;;;;uHAAU;UAC3B,OAA2B,sBAAR,SAAO;0CACzB,OAAK;kEAAI;;;;;;;;;;;uIAAY;;UAEtB,SAA0D;;qCAA3B,SAAO;6DAAE;;;;;;;;;;;kIAAU;qCAAE,OAAK;IAE/D;;;;;;;2HAA8B,SAAO;;yEAAnB;IAClB;;;;;;;;;yEAAM;;GACP;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAzDD;qCAAA;;;;;;;;;;;0GAAqC;KAAA;IACrC;qCAAA;;;;;;;;;;;0GAA+C;KAAA;IAC/C;qCAAA;;;;;;;;;;;0GAAuD;KAAA;IACvD;qCAAA;;;;;;;;;;;0GAA6B;KAAA;;;;;;;;;;"
+}
