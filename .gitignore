@@ -6,8 +6,14 @@ dist/
 contracts/managed/keys/
 apps/web/.vite/
 
-# Local planning docs — not for public/judge review
-docs/
+# Agent / local-only (not for public review)
 CLAUDE.md
 .claude/
 .remember/
+
+# Publish curated docs; keep mid-flight / program dumps local
+docs/*
+!docs/README.md
+!docs/architecture.md
+!docs/privacy-model.md
+!docs/boundaries.md
