@@ -46,7 +46,7 @@ gantt
 | Level 2 — Waxing Crescent (Lace + UI) | Planned |
 | Level 3 — First Quarter (full dApp + CI) | Planned |
 
-Sequencing rules: [docs/boundaries.md](docs/boundaries.md).
+Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level filing playbooks: [docs/submission.md](docs/submission.md).
 
 ## Initial idea
 
@@ -106,6 +106,7 @@ Current coverage: `distribute_accepts_when_sum_equals_total`, `distribute_reject
 | Doc | Contents |
 |---|---|
 | [docs/README.md](docs/README.md) | Docs index |
+| [docs/submission.md](docs/submission.md) | Rise In submission playbook |
 | [docs/architecture.md](docs/architecture.md) | System design |
 | [docs/privacy-model.md](docs/privacy-model.md) | Who learns what |
 | [docs/boundaries.md](docs/boundaries.md) | Scope and gates |
