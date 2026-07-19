@@ -69,6 +69,8 @@ Program source: `Midnight.md`. Rise In rewards are **sequential** — L2 require
 
 CI/CD is an **L3** Midnight requirement (may be added earlier). Hiding the recipient list is **not** required for idea #6.
 
+Filing checklists, pace, and README evidence rules: [submission.md](submission.md).
+
 ## Decision Log (append-only)
 
 | Date | Decision | Why |

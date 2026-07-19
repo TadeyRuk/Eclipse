@@ -17,3 +17,6 @@ docs/*
 !docs/architecture.md
 !docs/privacy-model.md
 !docs/boundaries.md
+!docs/submission.md
+!docs/evidence/
+!docs/evidence/**
