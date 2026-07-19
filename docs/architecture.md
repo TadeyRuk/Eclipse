@@ -188,5 +188,5 @@ Minimum bar: the three contract invariant tests above are non-negotiable — the
 | Midnight.js / connector API churn (pre-1.0) | All contact isolated in two adapter files; pin versions; upgrade deliberately |
 | Sum-proof pattern has no official worked example | Prototype `distribute()` circuit first, before any UI work — fail fast if pattern fights the compiler |
 | Proof generation latency unknown | Measure at Level 1; UI designs for seconds-scale waits (progress states), not instant feedback |
-| Fixed-size recipient arrays (ZK circuits often need static bounds) | Cap recipients per payroll (e.g. 8) as v1 constraint; document in boundaries.md |
+| Fixed-size recipient arrays (ZK circuits often need static bounds) | Capped at 8 recipients per payroll for v1 (see boundaries.md numeric guardrails) |
 | Recipient claim UX depends on private-state APIs | Validate during Level 2 wallet integration before promising claim flow in demo |
