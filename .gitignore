@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+*.log
+
+contracts/managed/keys/
+apps/web/.vite/
+
+# Local planning docs — not for public/judge review
+docs/
+CLAUDE.md
+.claude/
+.remember/
