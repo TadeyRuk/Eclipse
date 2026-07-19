@@ -8,6 +8,46 @@ Built for Rise In's [New Moon to Full: Monthly Moonshots on Midnight](https://ww
 
 Gate 0 complete: `distribute()` sum-proof compiles and invariant tests pass (`contracts/`). Next: Level 1 — `createPayroll` + stub `fund`, Preprod deploy, and submission packaging. No live demo or deploy address yet.
 
+**Last updated:** 2026-07-19 · Program window: 2026-06-29 → 2026-07-31
+
+### Progress (Gantt)
+
+```mermaid
+gantt
+    title Eclipse — Rise In New Moon to Full
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+    todayMarker off
+
+    section Foundation
+    Architecture and privacy docs     :done,    arch, 2026-07-19, 1d
+    Gate0 sum-proof circuit plus tests :done,   g0,   2026-07-19, 1d
+
+    section Level1_NewMoon
+    createPayroll and stub fund       :active,  l1a, 2026-07-20, 2d
+    Preprod deploy and screenshots    :         l1b, after l1a, 2d
+    File Level1 on Rise In            :crit,    l1c, after l1b, 1d
+
+    section Level2_WaxingCrescent
+    Lace wallet plus UI circuit call  :         l2a, 2026-07-25, 3d
+    Live demo and demo video          :         l2b, after l2a, 2d
+    File Level2 on Rise In            :crit,    l2c, after l2b, 1d
+
+    section Level3_FirstQuarter
+    Full employer employee flows      :         l3a, 2026-07-28, 2d
+    CI tests idea approval demo       :         l3b, after l3a, 2d
+    File Level3 on Rise In            :crit,    l3c, 2026-07-31, 1d
+```
+
+| Gate / level | State |
+|---|---|
+| Gate 0 — sum-proof spike | **Done** |
+| Level 1 — New Moon (deploy + README evidence) | **In progress** |
+| Level 2 — Waxing Crescent (Lace + UI) | Planned |
+| Level 3 — First Quarter (full dApp + CI) | Planned |
+
+Sequencing rules: [docs/boundaries.md](docs/boundaries.md).
+
 ## Initial idea
 
 Eclipse is a private payroll dApp on Midnight. An employer deposits a fixed pool of test tokens, assigns each recipient's share privately, and distributes in one atomic transaction. A zero-knowledge proof guarantees the hidden amounts sum exactly to the public deposit — so recipients and observers can trust the books balance without anyone (including the chain itself) ever seeing who earned what. Salary privacy is a real-world norm; Eclipse makes it a verifiable one.
