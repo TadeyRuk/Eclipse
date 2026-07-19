@@ -9,3 +9,5 @@ Private payroll on Midnight. These docs are the public design surface for the re
 | [boundaries.md](boundaries.md) | Scope, sequencing gates, numeric guardrails, decision log |
 
 Reading order: **boundaries → architecture → privacy-model**.
+
+Progress Gantt (judge-facing): see root [README.md](../README.md#progress-gantt).
