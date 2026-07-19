@@ -48,7 +48,7 @@ Rule: a gate is not "done" until the submission is actually filed on Rise In, no
 
 - A second smart contract appears
 - Any circuit needs more than ~5 witnesses
-- The SDK grows a third adapter beyond wallet/contract(/proof)
+- The SDK grows a fourth adapter beyond wallet/contract/proof
 - Any feature exists that the 60-second demo video will not show
 - A dependency gets added that isn't: Midnight tooling, React, Vite, Tailwind, Zustand, vitest, testing-library
 - More than 20% of a week goes to UI polish before Gate 3 passes

@@ -8,7 +8,7 @@
 2. **[boundaries.md](boundaries.md)** — what Eclipse is NOT, numeric guardrails, sequencing gates, decision log. Read before proposing any feature.
 3. **[architecture.md](architecture.md)** — full system design: contract (ledger/circuits/invariants), SDK adapter layer, frontend, security posture, CI/CD, testing, risks.
 4. **[privacy-model.md](privacy-model.md)** — who learns what, disclosure ledger, honest limitations. Canonical source for the judged README "privacy model" section.
-5. **[design.md](design.md)** — UI/UX. Intentionally blank until Gate 0 (contract feasibility) passes.
+5. **[design.md](design.md)** — UI/UX. Wireframes and visual design deferred until Gate 0 (contract feasibility) passes; constraints and open questions captured now.
 
 ## Current Status
 
