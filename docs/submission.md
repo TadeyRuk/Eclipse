@@ -55,8 +55,9 @@ Progress chart: root [README.md](../README.md#progress-gantt).
 - Evidence: `docs/evidence/l2-connect.png`, `l2-distribute.png`, `l2-observer.png`, `l2-demo.webm`
 - Demo storyboard: `docs/evidence/l2-demo-storyboard.md`
 - Netlify live demo: [https://eclipse-private-payroll.netlify.app](https://eclipse-private-payroll.netlify.app) (`/employer`, `/observer`)
+- Chain strengthen: `MidnightJsEclipseTransport` + `VITE_USE_CHAIN=1`; `npm run lifecycle` for seed-wallet Preprod create→fund→distribute; proof-server pin `8.1.0`
 - Tag: `level-2` on commit `247b1c7` (pushed)
-- Remaining: file Level 2 on Rise In with GitHub repo + live demo URL + demo video + Preprod address
+- Remaining: complete one live Preprod `callTx` (wallet needs spendable tDUST), re-film demo if needed, file on Rise In
 
 ---
 

@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build --workspace=@eclipse/web"
+  command = "mkdir -p apps/web/public/zk && rm -rf apps/web/public/zk/eclipse && cp -a contracts/managed/eclipse apps/web/public/zk/eclipse && npm run build --workspace=@eclipse/web"
   publish = "apps/web/dist"
 
 [build.environment]
@@ -8,6 +8,12 @@
   VITE_CONTRACT_ADDRESS = "3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47"
   VITE_PROOF_SERVER_URL = "http://127.0.0.1:6300"
   VITE_DEBUG = "0"
+  VITE_USE_CHAIN = "1"
+
+[[redirects]]
+  from = "/zk/*"
+  to = "/zk/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"

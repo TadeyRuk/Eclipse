@@ -7,7 +7,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "deploy:init": "MIDNIGHT_NETWORK=${MIDNIGHT_NETWORK:-preview} tsx deploy/deploy.ts init",
-    "deploy": "MIDNIGHT_NETWORK=${MIDNIGHT_NETWORK:-preview} tsx deploy/deploy.ts deploy"
+    "deploy": "MIDNIGHT_NETWORK=${MIDNIGHT_NETWORK:-preview} tsx deploy/deploy.ts deploy",
+    "lifecycle": "MIDNIGHT_NETWORK=${MIDNIGHT_NETWORK:-preprod} tsx deploy/lifecycle.ts"
   },
   "devDependencies": {
     "@midnight-ntwrk/compact-runtime": "^0.16.0",

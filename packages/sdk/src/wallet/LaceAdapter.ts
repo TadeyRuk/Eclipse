@@ -1,42 +1,20 @@
+import type { ConnectedAPI, InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
 import type { Address, Result } from '../types';
 import { err, ok } from '../types/result';
 import { safeAsync } from '../internal/safeAsync';
 import type { WalletPort, WalletState } from './WalletPort';
 
-/** Minimal shape of Midnight DApp connector InitialAPI (Lace). */
-type MidnightInitialApi = {
-  name?: string;
-  apiVersion?: string;
-  connect: (networkId: string) => Promise<MidnightConnectedApi>;
-};
-
-type MidnightConnectedApi = {
-  state?: () => Promise<{ address?: string; coinPublicKey?: string }>;
-  balanceAndProveTransaction?: (...args: unknown[]) => Promise<unknown>;
-  submitTransaction?: (...args: unknown[]) => Promise<unknown>;
-  disconnect?: () => Promise<void>;
-  experimental?: {
-    disconnect?: () => Promise<void>;
-  };
-};
-
-declare global {
-  interface Window {
-    midnight?: Record<string, MidnightInitialApi | undefined>;
-  }
-}
-
 export type LaceAdapterConfig = {
   network: 'preprod' | 'preview' | 'undeployed';
-  /** Prefer this wallet id if present (e.g. lace). */
+  /** Prefer this wallet id if present (Lace injects `mnLace`). */
   preferredWalletId?: string;
 };
 
-function listWallets(): { id: string; api: MidnightInitialApi }[] {
+function listWallets(): { id: string; api: InitialAPI }[] {
   const root = typeof window !== 'undefined' ? window.midnight : undefined;
   if (!root) return [];
   return Object.entries(root)
-    .filter((entry): entry is [string, MidnightInitialApi] => {
+    .filter((entry): entry is [string, InitialAPI] => {
       const api = entry[1];
       return !!api && typeof api.connect === 'function';
     })
@@ -44,14 +22,14 @@ function listWallets(): { id: string; api: MidnightInitialApi }[] {
 }
 
 export class LaceAdapter implements WalletPort {
-  private connectedApi: MidnightConnectedApi | null = null;
+  private connectedApi: ConnectedAPI | null = null;
   private address: Address | null = null;
   private readonly network: string;
   private readonly preferredWalletId: string;
 
   constructor(config: LaceAdapterConfig) {
     this.network = config.network;
-    this.preferredWalletId = config.preferredWalletId ?? 'lace';
+    this.preferredWalletId = config.preferredWalletId ?? 'mnLace';
   }
 
   state(): WalletState {
@@ -61,8 +39,8 @@ export class LaceAdapter implements WalletPort {
     };
   }
 
-  /** Expose connected API for MidnightAdapter (same process; not a fourth adapter). */
-  getConnectedApi(): MidnightConnectedApi | null {
+  /** Expose ConnectedAPI for MidnightJsEclipseTransport (not a fourth adapter). */
+  getConnectedApi(): ConnectedAPI | null {
     return this.connectedApi;
   }
 
@@ -73,16 +51,26 @@ export class LaceAdapter implements WalletPort {
         throw new Error('No Midnight wallet found. Install Lace and unlock it on Preprod.');
       }
       const preferred =
-        wallets.find((w) => w.id.toLowerCase().includes(this.preferredWalletId)) ?? wallets[0];
+        wallets.find((w) => w.id.toLowerCase().includes(this.preferredWalletId.toLowerCase())) ??
+        wallets.find((w) => w.id.toLowerCase().includes('lace')) ??
+        wallets[0];
       if (!preferred) {
         throw new Error('No usable Midnight wallet API');
       }
       const api = await preferred.api.connect(this.network);
       this.connectedApi = api;
+
       let address: Address | null = null;
-      if (typeof api.state === 'function') {
-        const s = await api.state();
-        address = (s.address ?? s.coinPublicKey ?? null) as Address | null;
+      try {
+        const shielded = await api.getShieldedAddresses();
+        address = (shielded.shieldedCoinPublicKey ?? shielded.shieldedAddress) as Address;
+      } catch {
+        try {
+          const u = await api.getUnshieldedAddress();
+          address = u.unshieldedAddress as Address;
+        } catch {
+          address = null;
+        }
       }
       this.address = address;
       return this.state();
@@ -91,14 +79,6 @@ export class LaceAdapter implements WalletPort {
 
   async disconnect(): Promise<Result<void>> {
     return safeAsync('WalletNotConnected', 'Lace disconnect failed', async () => {
-      const api = this.connectedApi;
-      if (api) {
-        if (typeof api.disconnect === 'function') {
-          await api.disconnect();
-        } else if (typeof api.experimental?.disconnect === 'function') {
-          await api.experimental.disconnect();
-        }
-      }
       this.connectedApi = null;
       this.address = null;
     });
@@ -108,8 +88,6 @@ export class LaceAdapter implements WalletPort {
     if (!this.connectedApi) {
       return err('WalletNotConnected', 'Connect Lace before signing');
     }
-    // Lace ConnectedAPI signing varies by version; keep a stable Result boundary.
-    // MidnightAdapter prefers submit/balance paths on the connected API when available.
     return ok(payload);
   }
 }
