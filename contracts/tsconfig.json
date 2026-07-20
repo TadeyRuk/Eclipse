@@ -8,5 +8,10 @@
     "rootDir": ".",
     "skipLibCheck": true
   },
-  "include": ["tests/**/*.ts", "managed/eclipse/contract/index.d.ts"]
+  "include": [
+    "tests/**/*.ts",
+    "deploy/**/*.ts",
+    "index.ts",
+    "managed/eclipse/contract/index.d.ts"
+  ]
 }

@@ -4,6 +4,55 @@
   "runtime-version": "0.16.0",
   "circuits": [
     {
+      "name": "createPayroll",
+      "pure": false,
+      "proof": true,
+      "arguments": [
+        {
+          "name": "employerPk",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "recipientsIn",
+          "type": {
+            "type-name": "Vector",
+            "length": 8,
+            "type": {
+              "type-name": "Bytes",
+              "length": 32
+            }
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
+      "name": "fund",
+      "pure": false,
+      "proof": true,
+      "arguments": [
+        {
+          "name": "amount",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
       "name": "distribute",
       "pure": false,
       "proof": true,
@@ -44,8 +93,18 @@
   ],
   "ledger": [
     {
-      "name": "depositTotal",
+      "name": "employer",
       "index": 0,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Bytes",
+        "length": 32
+      }
+    },
+    {
+      "name": "depositTotal",
+      "index": 1,
       "exported": true,
       "storage": "Cell",
       "type": {
@@ -55,20 +114,6 @@
     },
     {
       "name": "recipients",
-      "index": 1,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Vector",
-        "length": 8,
-        "type": {
-          "type-name": "Bytes",
-          "length": 32
-        }
-      }
-    },
-    {
-      "name": "receiptCommitments",
       "index": 2,
       "exported": true,
       "storage": "Cell",
@@ -82,14 +127,29 @@
       }
     },
     {
-      "name": "status",
+      "name": "receiptCommitments",
       "index": 3,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Vector",
+        "length": 8,
+        "type": {
+          "type-name": "Bytes",
+          "length": 32
+        }
+      }
+    },
+    {
+      "name": "status",
+      "index": 4,
       "exported": true,
       "storage": "Cell",
       "type": {
         "type-name": "Enum",
         "name": "Status",
         "elements": [
+          "Uninitialized",
           "Created",
           "Funded",
           "Distributed"
