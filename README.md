@@ -102,10 +102,10 @@ npm test
 ### Web UI (local)
 
 ```bash
-# Terminal A — proof server (required for create/fund/distribute)
-docker run -p 6300:6300 midnightntwrk/proof-server:latest midnight-proof-server -v
+# Terminal A — proof server (required for create/fund/distribute); pin to ledger 8.1.0
+docker run -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
 
-# Terminal B — dual-view app
+# Terminal B — dual-view app (add VITE_USE_CHAIN=1 for real Preprod callTx)
 npm run dev -w @eclipse/web
 # open http://127.0.0.1:5173/employer and /observer
 ```
@@ -118,22 +118,31 @@ Needs Lace (Preprod) + funded tDUST for a real wallet connect. Connect-only work
 cd contracts && MIDNIGHT_NETWORK=preprod npm run deploy
 ```
 
+On-chain create→fund→distribute (same Midnight.js path as the UI, deploy wallet):
+
+```bash
+MIDNIGHT_NETWORK=preprod npm run lifecycle -w @eclipse/contracts
+```
+
 ## Live demo prerequisites
 
 Judges on Netlify **cannot** use your laptop’s proof-server unless they run one locally.
 
 1. Install [Lace](https://www.lace.io/) and switch to **Preprod**
-2. Fund tDUST via the Midnight faucet
+2. Fund tDUST via the Midnight faucet (and ensure Night is registered for dust generation)
 3. Run the proof-server on loopback:
 
 ```bash
-docker run -p 6300:6300 midnightntwrk/proof-server:latest midnight-proof-server -v
+docker run -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
 ```
 
-4. Open the live demo → Connect Lace → Employer create → stub fund → distribute
-5. Open `/observer` (second tab): public status + commitments; **no** private amounts
+4. Open the live demo → Connect Lace → Employer create → stub fund → distribute (`VITE_USE_CHAIN=1` on Netlify)
+5. Open `/observer`: public status + commitments; **no** private amounts
 
-The browser UI uses the SDK’s in-memory circuit transport for the L2 privacy demo (same public field shapes as the Compact ledger). On-chain Preprod address above remains the L1 deploy evidence; wiring a full Midnight.js browser provider is post-L2.
+Transport modes:
+
+- **`VITE_USE_CHAIN=0`:** in-memory ledger for dual-view privacy demos without fees
+- **`VITE_USE_CHAIN=1`:** Midnight.js `findDeployedContract` + `callTx` via Lace + local proof-server **8.1.0**; observer reads the Preprod indexer
 
 ## Architecture
 

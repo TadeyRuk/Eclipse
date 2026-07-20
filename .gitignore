@@ -28,3 +28,4 @@ docs/*
 !docs/submission.md
 !docs/evidence/
 !docs/evidence/**
+apps/web/public/zk/

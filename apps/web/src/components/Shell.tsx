@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { getSdk, debugEnabled, getContractAddress } from '../sdk';
+import { chainModeEnabled, debugEnabled, getContractAddress, getSdk } from '../sdk';
 import { useSession } from '../state/session';
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -106,6 +106,7 @@ export function Shell({ children }: { children: ReactNode }) {
       {debugEnabled ? (
         <footer className="mt-12 border-t border-[var(--line)] pt-4 font-mono text-xs text-[var(--muted)]">
           <div>contract: {getContractAddress()}</div>
+          <div>chainMode: {String(chainModeEnabled)}</div>
           <div>proofHealthy: {String(proofHealthy)}</div>
           <div>error.kind: {lastErrorKind ?? '—'}</div>
         </footer>
