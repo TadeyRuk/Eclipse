@@ -11,7 +11,6 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
 import pino from 'pino';
-import { filter, firstValueFrom, throttleTime, timeout } from 'rxjs';
 import { WebSocket } from 'ws';
 import {
   initializeMidnightProviders,
@@ -23,10 +22,16 @@ import {
   findDeployedContract,
   getPublicStates,
 } from '@midnight-ntwrk/midnight-js-contracts';
-import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 
 import { getConfig } from './config.js';
+import {
+  dustBech32FromState,
+  latestState,
+  registerNightForDust,
+  waitForSpendableDust,
+} from './dust.js';
 import { CompiledEclipseContract, zkConfigPath, ledger } from '../index.js';
+import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 
 // @ts-expect-error Node needs a WebSocket polyfill for indexer subscriptions
 globalThis.WebSocket = WebSocket;
@@ -98,36 +103,18 @@ function saltsEight(): Uint8Array[] {
   });
 }
 
-async function latestState(wallet: MidnightWalletProvider['wallet']) {
-  return firstValueFrom(wallet.state().pipe(throttleTime(2_000)));
-}
-
-async function waitForSpendableDust(
-  wallet: MidnightWalletProvider['wallet'],
-  timeoutMs: number,
-): Promise<void> {
+/** Wait until unshielded NIGHT is visible — needed before dust registration. */
+async function waitForNight(timeoutMs: number, wallet: Awaited<ReturnType<typeof MidnightWalletProvider.build>>['wallet']): Promise<bigint> {
   const started = Date.now();
+  const nightRaw = unshieldedToken().raw;
   while (Date.now() - started < timeoutMs) {
-    let state;
-    try {
-      state = await firstValueFrom(
-        wallet.state().pipe(
-          throttleTime(5_000),
-          filter((s) => s.isSynced),
-          timeout({ first: 60_000 }),
-        ),
-      );
-    } catch {
-      state = await latestState(wallet);
-    }
-    const dust = state.dust.balance(new Date());
-    const nightRaw = unshieldedToken().raw;
+    const state = await latestState(wallet);
     const night = state.unshielded.balances[nightRaw] ?? 0n;
-    logger.info(`Wallet sync dust=${dust} night=${night} isSynced=${state.isSynced}`);
-    if (dust > 0n) return;
-    await sleep(15_000);
+    logger.info(`Waiting for tNIGHT… night=${night} isSynced=${state.isSynced}`);
+    if (night > 0n) return night;
+    await sleep(10_000);
   }
-  throw new Error(`Timed out waiting for spendable tDUST after ${timeoutMs}ms`);
+  throw new Error(`Timed out waiting for tNIGHT after ${timeoutMs}ms — fund via faucet first`);
 }
 
 async function main(): Promise<void> {
@@ -139,12 +126,23 @@ async function main(): Promise<void> {
   setNetworkId(config.networkId as 'preview' | 'preprod');
 
   logger.info(`Network=${network} contract=${contractAddress}`);
-  logger.info(`Proof server=${config.proofServer}`);
+  logger.info(`Proof server=${config.proofServer} (reuse existing docker if :6300 is up)`);
 
   const wallet = await MidnightWalletProvider.build(logger, envConfigFor(network), seed);
   await wallet.start(false);
 
-  const dustTimeout = Number(process.env['MIDNIGHT_DUST_TIMEOUT_MS'] ?? 20 * 60_000);
+  const nightTimeout = Number(process.env['MIDNIGHT_FUND_TIMEOUT_MS'] ?? 15 * 60_000);
+  const night = await waitForNight(nightTimeout, wallet.wallet);
+  logger.info(`tNIGHT balance: ${night}`);
+
+  const dustTimeout = Number(process.env['MIDNIGHT_DUST_TIMEOUT_MS'] ?? 30 * 60_000);
+  const dustState = await latestState(wallet.wallet);
+  logger.info(`Wallet dust address: ${dustBech32FromState(dustState)}`);
+  if (dustState.dust.balance(new Date()) === 0n) {
+    await registerNightForDust(wallet.wallet, wallet.unshieldedKeystore, {
+      forceReregister: process.env['MIDNIGHT_FORCE_DUST_REREGISTER'] === '1',
+    });
+  }
   logger.info('Waiting for spendable tDUST before circuit calls…');
   await waitForSpendableDust(wallet.wallet, dustTimeout);
 
