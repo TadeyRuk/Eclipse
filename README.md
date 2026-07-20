@@ -6,7 +6,7 @@ Built for Rise In's [New Moon to Full: Monthly Moonshots on Midnight](https://ww
 
 ## Status
 
-Level 1 New Moon ready to file: Eclipse contract with `createPayroll` + stub `fund` + `distribute` is compiled, tested, and deployed on Preprod. Remaining for L1 credit: submit on Rise In.
+Level 1 New Moon **filed** on Rise In (2026-07-20): Eclipse with `createPayroll` + stub `fund` + `distribute` compiles, tests green, and is deployed on Preprod. Next: Level 2 (Lace + UI circuit call).
 
 **Last updated:** 2026-07-20 · Program window: 2026-06-29 → 2026-07-31
 
@@ -35,10 +35,10 @@ gantt
     section Level1_NewMoon
     createPayroll and stub fund       :done,    l1a, 2026-07-20, 1d
     Preprod deploy and screenshots    :done,    l1b, 2026-07-20, 1d
-    File Level1 on Rise In            :crit,    l1c, 2026-07-20, 1d
+    File Level1 on Rise In            :done,    l1c, 2026-07-20, 1d
 
     section Level2_WaxingCrescent
-    Lace wallet plus UI circuit call  :         l2a, 2026-07-25, 3d
+    Lace wallet plus UI circuit call  :active,  l2a, 2026-07-21, 4d
     Live demo and demo video          :         l2b, after l2a, 2d
     File Level2 on Rise In            :crit,    l2c, after l2b, 1d
 
@@ -51,8 +51,8 @@ gantt
 | Gate / level | State |
 |---|---|
 | Gate 0 — sum-proof spike | **Done** |
-| Level 1 — New Moon (deploy + README evidence) | **Ready to file** (Rise In pending) |
-| Level 2 — Waxing Crescent (Lace + UI) | Planned |
+| Level 1 — New Moon | **Filed** (Rise In) |
+| Level 2 — Waxing Crescent (Lace + UI) | Next |
 | Level 3 — First Quarter (full dApp + CI) | Planned |
 
 Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level filing playbooks: [docs/submission.md](docs/submission.md).
@@ -100,13 +100,13 @@ cd contracts && MIDNIGHT_NETWORK=preprod npm run deploy
 
 ## Architecture
 
-One Compact contract (L1: `createPayroll` + stub `fund` + `distribute`; `claim` post-L1), one React frontend with employer / recipient views, and an SDK adapter layer isolating Midnight.js and Lace. Circuits run locally; only proofs and signed transactions reach the network.
+One Compact contract today (`createPayroll`, stub `fund`, `distribute`). Planned next: Lace-connected React UI and SDK adapters (`WalletPort` / `EclipsePort`); `claim` post-L1. Circuits run locally; only proofs and signed transactions reach the network.
 
 Details: [docs/architecture.md](docs/architecture.md). Scope gates: [docs/boundaries.md](docs/boundaries.md).
 
 ## Privacy Model
 
-Deposit total, recipient list, and distribution success (`status = Distributed` + commitments) are public. Individual amounts never appear as plaintext ledger state — including for the employer via chain queries. See [docs/privacy-model.md](docs/privacy-model.md).
+Deposit total, recipient list, and distribution success (`status = Distributed` + commitments) are public. Individual amounts never appear as plaintext ledger state. Detail: [docs/privacy-model.md](docs/privacy-model.md) (same disclosure rules as the table above).
 
 ## Testing
 
@@ -114,7 +114,7 @@ Deposit total, recipient list, and distribution success (`status = Distributed` 
 cd contracts && npm test
 ```
 
-Current coverage: sum-proof pass/reject plus lifecycle (create→fund→distribute, reject before fund, reject double-distribute) — `cd contracts && npm test`.
+Five tests: sum-proof pass/reject plus lifecycle (create→fund→distribute, reject before fund, reject double-distribute).
 
 ## Documentation
 
