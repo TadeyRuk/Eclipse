@@ -1,7 +1,14 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
+!.env.preview.example
+!.env.preprod.example
 *.log
+.states/
+contracts/.states/
+contracts/midnight-level-db/
 
 contracts/managed/keys/
 apps/web/.vite/

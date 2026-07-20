@@ -1,25 +1,21 @@
-// Eclipse — Gate 0 sum-proof spike
-// Spec: docs/architecture.md §3.1
+// Eclipse — L1: createPayroll + stub fund + distribute
+// Spec: docs/architecture.md §3.2
 // Public surface: docs/privacy-model.md (ledger writes only; disclose at write points)
 
 pragma language_version 0.23;
 
 import CompactStandardLibrary;
 
-enum Status { Created, Funded, Distributed }
+// Uninitialized = deploy default; then Created → Funded → Distributed
+enum Status { Uninitialized, Created, Funded, Distributed }
 
+export ledger employer: Bytes<32>;
 export ledger depositTotal: Uint<64>;
 export ledger recipients: Vector<8, Bytes<32>>;
 export ledger receiptCommitments: Vector<8, Bytes<32>>;
 export ledger status: Status;
 
-// Gate 0 bootstrap: seed Funded ledger so distribute() can be tested without L1 create/fund.
-// Public surface: depositTotal, recipients, status=Funded (privacy-model.md fund/create rows).
-constructor(total: Uint<64>, recipientsIn: Vector<8, Bytes<32>>) {
-  depositTotal = disclose(total);
-  recipients = disclose(recipientsIn);
-  status = Status.Funded;
-}
+constructor() {}
 
 circuit addAmount(acc: Uint<64>, x: Uint<64>): Uint<64> {
   return (acc + x) as Uint<64>;
@@ -29,11 +25,18 @@ circuit sumVector8(amounts: Vector<8, Uint<64>>): Uint<64> {
   return fold(addAmount, 0, amounts);
 }
 
-circuit assertLifecycleFunded(): [] {
+circuit assertUninitialized(): [] {
+  assert(status == Status.Uninitialized, "createPayroll requires Uninitialized status");
+}
+
+circuit assertCreated(): [] {
+  assert(status == Status.Created, "fund requires Created status");
+}
+
+circuit assertFunded(): [] {
   assert(status == Status.Funded, "distribute requires Funded status");
 }
 
-// commitment[i] = H(amount || recipientPk || salt) — architecture §3
 circuit commitRecipient(amount: Uint<64>, recipientPk: Bytes<32>, salt: Bytes<32>): Bytes<32> {
   return persistentHash<[Uint<64>, Bytes<32>, Bytes<32>]>([amount, recipientPk, salt]);
 }
@@ -50,19 +53,34 @@ circuit assertPadding(
   }
 }
 
-// Core invariant: sum(amounts) == depositTotal; write commitments; status -> Distributed.
-// Witnesses (private by default): amounts, salts. Ledger writes: receiptCommitments, status.
+// Public surface: employer, recipients, status=Created
+export circuit createPayroll(
+  employerPk: Bytes<32>,
+  recipientsIn: Vector<8, Bytes<32>>
+): [] {
+  assertUninitialized();
+  employer = disclose(employerPk);
+  recipients = disclose(recipientsIn);
+  status = Status.Created;
+}
+
+// Stub fund: public depositTotal only (no FungibleToken)
+export circuit fund(amount: Uint<64>): [] {
+  assertCreated();
+  depositTotal = disclose(amount);
+  status = Status.Funded;
+}
+
 export circuit distribute(
   amounts: Vector<8, Uint<64>>,
   salts: Vector<8, Bytes<32>>
 ): [] {
-  assertLifecycleFunded();
+  assertFunded();
   assertPadding(amounts, recipients);
   const total = sumVector8(amounts);
   assert(total == depositTotal, "sum(amounts) must equal depositTotal");
 
   const commits = map(commitRecipient, amounts, recipients, salts);
-  // Public surface: receiptCommitments + status=Distributed (privacy-model.md distribute rows)
   receiptCommitments = disclose(commits);
   status = Status.Distributed;
 }

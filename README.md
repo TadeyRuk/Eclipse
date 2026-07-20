@@ -6,9 +6,18 @@ Built for Rise In's [New Moon to Full: Monthly Moonshots on Midnight](https://ww
 
 ## Status
 
-Gate 0 complete: `distribute()` sum-proof compiles and invariant tests pass (`contracts/`). Next: Level 1 — `createPayroll` + stub `fund`, Preprod deploy, and submission packaging. No live demo or deploy address yet.
+Level 1 New Moon ready to file: Eclipse contract with `createPayroll` + stub `fund` + `distribute` is compiled, tested, and deployed on Preprod. Remaining for L1 credit: submit on Rise In.
 
-**Last updated:** 2026-07-19 · Program window: 2026-06-29 → 2026-07-31
+**Last updated:** 2026-07-20 · Program window: 2026-06-29 → 2026-07-31
+
+### Contract address
+
+| Network | Address |
+|---|---|
+| Preview | — |
+| Preprod | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) |
+
+**Evidence:** [compile](docs/evidence/l1-compile.png) · [deploy](docs/evidence/l1-deploy.png) · [address file](docs/evidence/l1-deploy-address-preprod.txt) · [faucet](docs/evidence/)
 
 ### Progress (Gantt)
 
@@ -24,9 +33,9 @@ gantt
     Gate0 sum-proof circuit plus tests :done,   g0,   2026-07-19, 1d
 
     section Level1_NewMoon
-    createPayroll and stub fund       :active,  l1a, 2026-07-20, 2d
-    Preprod deploy and screenshots    :         l1b, after l1a, 2d
-    File Level1 on Rise In            :crit,    l1c, after l1b, 1d
+    createPayroll and stub fund       :done,    l1a, 2026-07-20, 1d
+    Preprod deploy and screenshots    :done,    l1b, 2026-07-20, 1d
+    File Level1 on Rise In            :crit,    l1c, 2026-07-20, 1d
 
     section Level2_WaxingCrescent
     Lace wallet plus UI circuit call  :         l2a, 2026-07-25, 3d
@@ -42,7 +51,7 @@ gantt
 | Gate / level | State |
 |---|---|
 | Gate 0 — sum-proof spike | **Done** |
-| Level 1 — New Moon (deploy + README evidence) | **In progress** |
+| Level 1 — New Moon (deploy + README evidence) | **Ready to file** (Rise In pending) |
 | Level 2 — Waxing Crescent (Lace + UI) | Planned |
 | Level 3 — First Quarter (full dApp + CI) | Planned |
 
@@ -73,19 +82,25 @@ npm install
 # Compile the Compact contract (requires Compact CLI)
 cd contracts && npm run compile
 
-# Run Gate 0 invariant tests
+# Lifecycle + sum-proof tests
 npm test
 ```
 
-Proof server (needed later for full proving / deploy flows):
+Proof server (required for deploy / proving):
 
 ```bash
 docker run -p 6300:6300 midnightntwrk/proof-server:latest midnight-proof-server -v
 ```
 
+Deploy to Preprod (funded wallet seed in `.env.preprod` — see `.env.preprod.example`):
+
+```bash
+cd contracts && MIDNIGHT_NETWORK=preprod npm run deploy
+```
+
 ## Architecture
 
-One Compact contract (create / fund / distribute / claim — Gate 0 ships helpers + `distribute`; L1 adds create + stub fund), one React frontend with employer / recipient views, and an SDK adapter layer isolating Midnight.js and Lace. Circuits run locally; only proofs and signed transactions reach the network.
+One Compact contract (L1: `createPayroll` + stub `fund` + `distribute`; `claim` post-L1), one React frontend with employer / recipient views, and an SDK adapter layer isolating Midnight.js and Lace. Circuits run locally; only proofs and signed transactions reach the network.
 
 Details: [docs/architecture.md](docs/architecture.md). Scope gates: [docs/boundaries.md](docs/boundaries.md).
 
@@ -99,7 +114,7 @@ Deposit total, recipient list, and distribution success (`status = Distributed` 
 cd contracts && npm test
 ```
 
-Current coverage: `distribute_accepts_when_sum_equals_total`, `distribute_rejects_when_sum_exceeds_total`.
+Current coverage: sum-proof pass/reject plus lifecycle (create→fund→distribute, reject before fund, reject double-distribute) — `cd contracts && npm test`.
 
 ## Documentation
 
