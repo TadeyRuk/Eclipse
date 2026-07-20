@@ -1,8 +1,11 @@
 {
   "extends": "../config/tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["vitest/globals"]
   },
-  "include": ["src"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
 }

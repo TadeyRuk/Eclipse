@@ -34,7 +34,7 @@ README.md → judge-facing surface
 |---|---|---|
 | Gate 0 — sum-proof spike | **Done** | `contracts/src/eclipse.compact`, `managed/eclipse`, sum-proof tests |
 | Level 1 — New Moon | **Filed** (Rise In, 2026-07-20) | Preprod `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`; evidence in `docs/evidence/`; tag `level-1` |
-| Level 2 — Waxing Crescent | Next | Lace + UI circuit call + observable privacy |
+| Level 2 — Waxing Crescent | **Ready to file** | Lace + dual-view UI + SDK adapters + privacy tests + Netlify config; evidence `l2-*.png`; storyboard `docs/evidence/l2-demo-storyboard.md` |
 | Level 3 — First Quarter | Planned | Full flow, CI, idea #6 approval, 1-min demo |
 
 Progress chart: root [README.md](../README.md#progress-gantt).
@@ -45,6 +45,17 @@ Progress chart: root [README.md](../README.md#progress-gantt).
 - Tag: `level-1`
 - Evidence: `docs/evidence/l1-compile.png`, `l1-deploy.png`
 - Rise In: submitted 2026-07-20
+
+### Level 2 filing record
+
+- Preprod address (unchanged): `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`
+- Dual-view: `/employer` (create→fund→distribute) + `/observer` (public ledger only)
+- SDK: `LaceAdapter`, `MidnightAdapter`, `ProofClient`, `createEclipseSdk` — `Result` boundary; unit tests in `packages/sdk/tests`
+- Privacy tests: amount wipe + observer has no private amount fields (`apps/web/src/pages/privacy.test.tsx`)
+- Evidence: `docs/evidence/l2-connect.png`, `l2-distribute.png`, `l2-observer.png`, `l2-demo.webm`
+- Demo storyboard: `docs/evidence/l2-demo-storyboard.md`
+- Netlify live demo: [https://eclipse-private-payroll.netlify.app](https://eclipse-private-payroll.netlify.app) (`/employer`, `/observer`)
+- Remaining before Rise In submit: tag `level-2` on the evidence commit, then file on Rise In with GitHub + live URL + video + Preprod address
 
 ---
 

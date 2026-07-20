@@ -5,6 +5,7 @@ dist/
 !.env.example
 !.env.preview.example
 !.env.preprod.example
+.netlify/
 *.log
 .states/
 contracts/.states/
