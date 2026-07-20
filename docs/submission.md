@@ -55,7 +55,8 @@ Progress chart: root [README.md](../README.md#progress-gantt).
 - Evidence: `docs/evidence/l2-connect.png`, `l2-distribute.png`, `l2-observer.png`, `l2-demo.webm`
 - Demo storyboard: `docs/evidence/l2-demo-storyboard.md`
 - Netlify live demo: [https://eclipse-private-payroll.netlify.app](https://eclipse-private-payroll.netlify.app) (`/employer`, `/observer`)
-- Remaining before Rise In submit: tag `level-2` on the evidence commit, then file on Rise In with GitHub + live URL + video + Preprod address
+- Tag: `level-2` on commit `247b1c7` (pushed)
+- Remaining: file Level 2 on Rise In with GitHub repo + live demo URL + demo video + Preprod address
 
 ---
 
