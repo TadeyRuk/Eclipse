@@ -33,23 +33,18 @@ README.md → judge-facing surface
 | Gate / level | State | Eclipse artifact |
 |---|---|---|
 | Gate 0 — sum-proof spike | **Done** | `contracts/src/eclipse.compact`, `managed/eclipse`, sum-proof tests |
-| Level 1 — New Moon | **Ready to file** | `createPayroll` + stub `fund` + `distribute`; Preprod address `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`; evidence in `docs/evidence/`; **file on Rise In still required** |
-| Level 2 — Waxing Crescent | Planned | Lace + UI circuit call + observable privacy |
+| Level 1 — New Moon | **Filed** (Rise In, 2026-07-20) | Preprod `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`; evidence in `docs/evidence/`; tag `level-1` |
+| Level 2 — Waxing Crescent | Next | Lace + UI circuit call + observable privacy |
 | Level 3 — First Quarter | Planned | Full flow, CI, idea #6 approval, 1-min demo |
 
 Progress chart: root [README.md](../README.md#progress-gantt).
 
-### Level 1 tag notes (local; do not push until you file)
+### Level 1 filing record
 
-After commits for L1 evidence land on the branch you want tagged:
-
-```bash
-# From repo root — only after you explicitly commit L1 docs/code
-git tag -a level-1 -m "Level 1 New Moon: Eclipse Preprod deploy 3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47"
-git push origin level-1   # when ready
-```
-
-Rise In filing is manual (you): paste Preprod address + evidence screenshots from `docs/evidence/`.
+- Preprod address: `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`
+- Tag: `level-1`
+- Evidence: `docs/evidence/l1-compile.png`, `l1-deploy.png`
+- Rise In: submitted 2026-07-20
 
 ---
 
