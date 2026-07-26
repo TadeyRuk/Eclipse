@@ -66,6 +66,7 @@ function emptyPayroll(): Payroll {
     recipients: [],
     status: 'Uninitialized',
     receiptCommitments: [],
+    claimed: Array.from({ length: MAX_RECIPIENTS }, () => false),
   };
 }
 
@@ -82,6 +83,7 @@ export class InMemoryEclipseTransport implements EclipseCircuitTransport {
       ...this.payroll,
       recipients: [...this.payroll.recipients],
       receiptCommitments: [...this.payroll.receiptCommitments],
+      claimed: [...this.payroll.claimed],
     });
   }
 
@@ -98,6 +100,7 @@ export class InMemoryEclipseTransport implements EclipseCircuitTransport {
         .map((r) => ({ address: bytesToHex(r) }))
         .filter((r) => r.address.replace(/0/g, '') !== ''),
       status: 'Created',
+      claimed: Array.from({ length: MAX_RECIPIENTS }, () => false),
       receiptCommitments: [],
     };
     return this.queryPublicPayroll();
@@ -139,6 +142,26 @@ export class InMemoryEclipseTransport implements EclipseCircuitTransport {
       status: 'Distributed',
       receiptCommitments: commits,
     };
+    return this.queryPublicPayroll();
+  }
+
+  /**
+   * Demo claim. Mirrors the contract's public effect — flip `claimed[slot]` — so
+   * the dual-view demo runs without a proof server. The real entitlement check
+   * lives in the Compact circuit; this only enforces order and double-claiming.
+   */
+  async claim(slot: number): Promise<Payroll> {
+    if (this.payroll.status !== 'Distributed') {
+      throw Object.assign(new Error('claim requires Distributed'), {
+        kind: 'CircuitRejected',
+      });
+    }
+    if (this.payroll.claimed[slot]) {
+      throw Object.assign(new Error('slot already claimed'), { kind: 'CircuitRejected' });
+    }
+    const claimed = [...this.payroll.claimed];
+    claimed[slot] = true;
+    this.payroll = { ...this.payroll, claimed };
     return this.queryPublicPayroll();
   }
 }
@@ -315,6 +338,7 @@ export function mapLedgerLikeToPayroll(input: {
   recipients: string[];
   status: PayrollStatus;
   receiptCommitments: string[];
+  claimed?: boolean[];
 }): Payroll {
   return {
     employer: input.employer,
@@ -322,5 +346,8 @@ export function mapLedgerLikeToPayroll(input: {
     recipients: input.recipients.map((address) => ({ address })),
     status: input.status,
     receiptCommitments: input.receiptCommitments,
+    // Older ledger reads predate the claimed vector; treat absent as all-false.
+    claimed:
+      input.claimed ?? Array.from({ length: MAX_RECIPIENTS }, () => false),
   };
 }

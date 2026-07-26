@@ -78,6 +78,65 @@ describe('employer privacy wipe', () => {
   });
 });
 
+describe('employee claim', () => {
+  beforeEach(() => {
+    useSession.getState().resetFlow();
+    useSession.setState({
+      wallet: { connected: true, address: 'aa'.repeat(32) },
+      payroll: null,
+      lastErrorKind: null,
+      lastErrorMessage: null,
+    });
+    __resetSdkForTests(mockWallet());
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('ok', { status: 200 })),
+    );
+  });
+
+  /** Drive the employer flow so a distributed payroll and local receipt exist. */
+  async function distributeAs(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(screen.getByTestId('recipient-0'), 'bb'.repeat(32));
+    await user.click(screen.getByTestId('create-payroll'));
+    await waitFor(() => expect(screen.getByTestId('deposit-input')).toBeInTheDocument());
+    await user.clear(screen.getByTestId('deposit-input'));
+    await user.type(screen.getByTestId('deposit-input'), '100');
+    await user.click(screen.getByTestId('fund-payroll'));
+    await waitFor(() => expect(screen.getByTestId('amount-0')).toBeInTheDocument());
+    await user.type(screen.getByTestId('amount-0'), '100');
+    await user.click(screen.getByTestId('distribute'));
+    await waitFor(() => expect(screen.getByTestId('distribute-success')).toBeInTheDocument());
+  }
+
+  it('claims a slot without ever rendering the amount', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderApp('/employer');
+    await distributeAs(user);
+    unmount();
+
+    renderApp('/employee');
+    await waitFor(() => expect(screen.getByTestId('employee-receipts')).toBeInTheDocument());
+
+    // The receipt exists and is claimable, but 100 must not appear anywhere —
+    // this page proves entitlement without disclosing the figure.
+    const before = screen.getByTestId('employee-page').textContent ?? '';
+    expect(before).not.toContain('100');
+
+    await user.click(screen.getByTestId('claim-0'));
+    await waitFor(() => expect(screen.getByTestId('claimed-0')).toBeInTheDocument());
+
+    const after = screen.getByTestId('employee-page').textContent ?? '';
+    expect(after).not.toContain('100');
+  });
+
+  it('shows the intended failure mode when no local receipt exists', async () => {
+    // A fresh SDK has no stored openings, so nothing is claimable.
+    renderApp('/employee');
+    await waitFor(() => expect(screen.getByTestId('employee-page')).toBeInTheDocument());
+    expect(screen.queryByTestId('employee-receipts')).not.toBeInTheDocument();
+  });
+});
+
 describe('observer page', () => {
   beforeEach(() => {
     __resetSdkForTests(mockWallet());

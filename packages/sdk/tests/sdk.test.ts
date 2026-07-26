@@ -127,14 +127,22 @@ describe('MidnightAdapter lifecycle (in-memory transport)', () => {
       expect(dist.value).not.toHaveProperty('amounts');
     }
 
-    // The in-memory transport implements no claim circuit, so this fails on
-    // transport support rather than on a missing receipt.
-    const claim = await adapter.claim();
-    expect(claim.ok).toBe(false);
-    if (!claim.ok) {
-      expect(claim.error.kind).toBe('CircuitRejected');
-      expect(claim.error.message).toMatch(/does not support claim/);
+    // distribute() stored an opening for slot 0, so claiming it succeeds and
+    // flips only the public flag.
+    const claim = await adapter.claim(0);
+    expect(claim.ok).toBe(true);
+
+    const after = await adapter.getPublicPayroll();
+    expect(after.ok).toBe(true);
+    if (after.ok) {
+      expect(after.value.claimed[0]).toBe(true);
+      expect(after.value.claimed[1]).toBe(false);
     }
+
+    // Slot 1 was funded too, but re-claiming slot 0 must be rejected.
+    const again = await adapter.claim(0);
+    expect(again.ok).toBe(false);
+    if (!again.ok) expect(again.error.kind).toBe('CircuitRejected');
   });
 
   it('distribute rejects when wallet disconnected', async () => {
@@ -269,6 +277,7 @@ describe('claim (private receipt openings)', () => {
       expect(payroll.value).not.toHaveProperty('amounts');
       expect(payroll.value).not.toHaveProperty('salts');
       expect(Object.keys(payroll.value).sort()).toEqual([
+        'claimed',
         'depositTotal',
         'employer',
         'receiptCommitments',

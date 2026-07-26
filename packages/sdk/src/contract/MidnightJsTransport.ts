@@ -207,6 +207,8 @@ export class MidnightJsEclipseTransport implements EclipseCircuitTransport {
       receiptCommitments: (led.receiptCommitments as Uint8Array[]).map((c) =>
         bytesToHex(c),
       ),
+      // Absent on contracts deployed before the claim circuit existed.
+      claimed: led.claimed ? [...(led.claimed as Iterable<boolean>)] : undefined,
     });
   }
 
@@ -240,6 +242,21 @@ export class MidnightJsEclipseTransport implements EclipseCircuitTransport {
   async distribute(amounts: bigint[], salts: Uint8Array[]): Promise<Payroll> {
     await this.ensureContract();
     await this.found.callTx.distribute(amounts, salts);
+    return this.readPayroll();
+  }
+
+  /**
+   * Calls the claim circuit. `amount` and `salt` are private witnesses — they are
+   * proven locally and never enter the transaction's public payload.
+   */
+  async claim(
+    slot: number,
+    amount: bigint,
+    recipientPk: Uint8Array,
+    salt: Uint8Array,
+  ): Promise<Payroll> {
+    await this.ensureContract();
+    await this.found.callTx.claim(BigInt(slot), amount, recipientPk, salt);
     return this.readPayroll();
   }
 }
@@ -280,6 +297,8 @@ export class IndexerPayrollReader {
       receiptCommitments: (led.receiptCommitments as Uint8Array[]).map((c: Uint8Array) =>
         bytesToHex(c),
       ),
+      // Absent on contracts deployed before the claim circuit existed.
+      claimed: led.claimed ? [...(led.claimed as Iterable<boolean>)] : undefined,
     });
   }
 }
