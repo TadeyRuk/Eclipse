@@ -13,6 +13,11 @@ called from the frontend, observable privacy via the dual-view UI (employer wiza
 ledger), a verifiable Preprod contract, live demo, and demo video. SDK adapters sit behind a
 `Result` boundary; privacy wipe tests cover the amount-clearing claim.
 
+Level 3 First Quarter **in progress** — CI/CD is green (typecheck → test → build on every push), the
+test suite stands at 20 across three workspaces, and the product proposal for idea #6 is drafted
+([docs/proposal.md](docs/proposal.md)). Remaining: real FungibleToken `fund` transfer-in, the `claim`
+circuit, and a one-minute demo video.
+
 Running create → fund → distribute yourself needs a local proof-server on `127.0.0.1:6300` — circuits
 prove locally by design, so this is inherent to Midnight, not a shortcut. Connect-only works on the
 hosted demo without one.
@@ -61,9 +66,11 @@ gantt
     File Level2 on Rise In            :active,  l2c, 2026-07-20, 1d
 
     section Level3_FirstQuarter
-    Full employer employee flows      :         l3a, 2026-07-28, 2d
-    CI tests idea approval demo       :         l3b, after l3a, 2d
-    File Level3 on Rise In            :crit,    l3c, 2026-07-31, 1d
+    CI pipeline and badge             :done,    l3a, 2026-07-26, 1d
+    Product proposal idea 6           :done,    l3b, 2026-07-26, 1d
+    FungibleToken fund and claim      :active,  l3c, 2026-07-27, 3d
+    One minute demo video             :         l3d, 2026-07-30, 1d
+    File Level3 on Rise In            :crit,    l3e, 2026-07-31, 1d
 ```
 
 | Gate / level | State |
@@ -161,7 +168,47 @@ Details: [docs/architecture.md](docs/architecture.md). Scope gates: [docs/bounda
 
 ## Privacy Model
 
-Deposit total, recipient list, and distribution success (`status = Distributed` + commitments) are public. Individual amounts never appear as plaintext ledger state. Detail: [docs/privacy-model.md](docs/privacy-model.md).
+### What an observer can learn
+
+Anyone querying the chain sees the employer address, the full recipient list, the `depositTotal`, the
+lifecycle `status`, and eight opaque `receiptCommitments`. When `status = Distributed`, they also
+learn something stronger: that the distribution **provably balanced** — the hidden amounts sum
+exactly to the public deposit.
+
+### What an observer cannot learn
+
+No chain query by anyone — including the employer — returns an individual amount. Per-recipient
+`amounts` and `salts` are private witnesses; they never become ledger state. The commitments are
+hashes, opaque without the opening a recipient holds.
+
+| Fact | Employer | Recipient (self) | Recipient (others) | Observer |
+|---|---|---|---|---|
+| Payroll exists, employer address | ✅ | ✅ | ✅ | ✅ |
+| Deposit total | ✅ | ✅ | ✅ | ✅ |
+| Recipient list | ✅ | ✅ | ✅ | ✅ |
+| Distribution balanced (proven) | ✅ | ✅ | ✅ | ✅ |
+| Own amount | ✅ | ✅ | — | ❌ |
+| **Any individual amount from chain data** | ❌ | ❌ | ❌ | ❌ |
+
+### Why this needs ZK rather than encryption
+
+Posting encrypted amounts would hide the values but prove nothing — an observer could not distinguish
+an honest payroll from one whose numbers don't add up, or where the employer kept half the pool.
+Because the sum check runs *inside* the circuit, an unbalanced distribution cannot produce a valid
+proof, so it cannot be confirmed. Recipients trust the math, not the employer.
+
+### Honest limitations
+
+- **Small-N inference.** With one recipient, their amount equals the public total; with two, each can
+  infer the other's. Amount privacy is meaningful from N=3 upward — a property of the arithmetic, not
+  a defect in the circuit.
+- **The deposit total is public by design.** Observers learn the company distributed 1000 tokens.
+  What is protected is the split, not the spend.
+- **The recipient list is public in v1.** Observers learn *who* was paid, not *how much*. Hiding
+  membership is a possible v2, out of scope per [docs/boundaries.md](docs/boundaries.md).
+- **Off-chain leakage is out of scope.** If the employer emails a spreadsheet, no chain helps.
+
+Full disclosure ledger and trust assumptions: [docs/privacy-model.md](docs/privacy-model.md).
 
 ## Testing
 
