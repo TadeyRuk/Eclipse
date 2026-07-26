@@ -11,6 +11,11 @@ export type ImpureCircuits<PS> = {
   distribute(context: __compactRuntime.CircuitContext<PS>,
              amounts_0: bigint[],
              salts_0: Uint8Array[]): __compactRuntime.CircuitResults<PS, []>;
+  claim(context: __compactRuntime.CircuitContext<PS>,
+        slot_0: bigint,
+        amount_0: bigint,
+        recipientPk_0: Uint8Array,
+        salt_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type ProvableCircuits<PS> = {
@@ -21,6 +26,11 @@ export type ProvableCircuits<PS> = {
   distribute(context: __compactRuntime.CircuitContext<PS>,
              amounts_0: bigint[],
              salts_0: Uint8Array[]): __compactRuntime.CircuitResults<PS, []>;
+  claim(context: __compactRuntime.CircuitContext<PS>,
+        slot_0: bigint,
+        amount_0: bigint,
+        recipientPk_0: Uint8Array,
+        salt_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type PureCircuits = {
@@ -34,6 +44,11 @@ export type Circuits<PS> = {
   distribute(context: __compactRuntime.CircuitContext<PS>,
              amounts_0: bigint[],
              salts_0: Uint8Array[]): __compactRuntime.CircuitResults<PS, []>;
+  claim(context: __compactRuntime.CircuitContext<PS>,
+        slot_0: bigint,
+        amount_0: bigint,
+        recipientPk_0: Uint8Array,
+        salt_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type Ledger = {
@@ -41,6 +56,7 @@ export type Ledger = {
   readonly depositTotal: bigint;
   readonly recipients: Uint8Array[];
   readonly receiptCommitments: Uint8Array[];
+  readonly claimed: boolean[];
   readonly status: number;
 }
 

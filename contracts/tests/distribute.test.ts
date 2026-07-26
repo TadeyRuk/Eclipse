@@ -145,3 +145,91 @@ describe('lifecycle', () => {
     );
   });
 });
+
+describe('claim', () => {
+  const AMOUNT = 40n;
+
+  /** Distribute AMOUNT to slot 0, returning the post-distribute context and its salts. */
+  function distributedContract() {
+    const { contract, circuitCtx } = freshContract();
+    const fundedCtx = createThenFund(contract, circuitCtx, AMOUNT);
+    const salts = eightSalts();
+    const { context } = contract.impureCircuits.distribute(
+      fundedCtx,
+      [AMOUNT, 0n, 0n, 0n, 0n, 0n, 0n, 0n],
+      salts,
+    );
+    return { contract, context, salts };
+  }
+
+  it('claim_accepts_valid_commitment_opening', () => {
+    const { contract, context, salts } = distributedContract();
+    const recipient = recipientsWithOneActive()[0]!;
+
+    const { context: after } = contract.impureCircuits.claim(
+      context,
+      0n,
+      AMOUNT,
+      recipient,
+      salts[0]!,
+    );
+
+    expect(ledger(after.currentQueryContext.state).claimed[0]).toBe(true);
+  });
+
+  it('claim_leaves_other_slots_unclaimed', () => {
+    const { contract, context, salts } = distributedContract();
+    const recipient = recipientsWithOneActive()[0]!;
+
+    const { context: after } = contract.impureCircuits.claim(
+      context,
+      0n,
+      AMOUNT,
+      recipient,
+      salts[0]!,
+    );
+
+    const flags = ledger(after.currentQueryContext.state).claimed;
+    for (const i of [1, 2, 3, 4, 5, 6, 7]) {
+      expect(flags[i]).toBe(false);
+    }
+  });
+
+  it('claim_rejects_wrong_amount', () => {
+    const { contract, context, salts } = distributedContract();
+    const recipient = recipientsWithOneActive()[0]!;
+
+    // A different amount hashes to a different commitment — this is the core
+    // guarantee: a recipient cannot claim more than they were committed.
+    expect(() =>
+      contract.impureCircuits.claim(context, 0n, AMOUNT + 1n, recipient, salts[0]!),
+    ).toThrow(/commitment mismatch for slot/);
+  });
+
+  it('claim_rejects_double_claim', () => {
+    const { contract, context, salts } = distributedContract();
+    const recipient = recipientsWithOneActive()[0]!;
+
+    const { context: after } = contract.impureCircuits.claim(
+      context,
+      0n,
+      AMOUNT,
+      recipient,
+      salts[0]!,
+    );
+
+    expect(() => contract.impureCircuits.claim(after, 0n, AMOUNT, recipient, salts[0]!)).toThrow(
+      /slot already claimed/,
+    );
+  });
+
+  it('claim_rejects_before_distribute', () => {
+    const { contract, circuitCtx } = freshContract();
+    const fundedCtx = createThenFund(contract, circuitCtx, AMOUNT);
+    const recipient = recipientsWithOneActive()[0]!;
+
+    expect(() =>
+      contract.impureCircuits.claim(fundedCtx, 0n, AMOUNT, recipient, eightSalts()[0]!),
+    ).toThrow(/claim requires Distributed status/);
+  });
+});

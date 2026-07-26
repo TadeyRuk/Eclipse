@@ -32,7 +32,7 @@
     { "op": "declare_pub_input", "var": 25 },
     { "op": "pi_skip", "guard": 24, "count": 1 },
     { "op": "load_imm", "imm": "50" },
-    { "op": "load_imm", "imm": "04" },
+    { "op": "load_imm", "imm": "05" },
     { "op": "declare_pub_input", "var": 26 },
     { "op": "declare_pub_input", "var": 24 },
     { "op": "declare_pub_input", "var": 24 },
