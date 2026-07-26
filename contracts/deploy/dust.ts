@@ -149,7 +149,14 @@ export async function waitForSpendableDust(
     const nightCoins = state.unshielded.availableCoins.filter((c) => c.utxo.type === nightRaw);
     let projected = 0n;
     try {
-      const estimates = state.dust.estimateDustGeneration(nightCoins, now);
+      // wallet-sdk-unshielded-wallet and wallet-sdk-dust-wallet each export a
+      // structurally different `UtxoWithMeta`, so the arrays are not mutually
+      // assignable. `projected` only feeds a diagnostic log line below, so a
+      // narrow cast is preferable to inventing a mapping between vendor types.
+      const estimates = state.dust.estimateDustGeneration(
+        nightCoins as unknown as Parameters<typeof state.dust.estimateDustGeneration>[0],
+        now,
+      );
       for (const e of estimates) {
         const rec = e as unknown as Record<string, unknown>;
         for (const key of ['generatedNow', 'generated', 'value', 'balance']) {

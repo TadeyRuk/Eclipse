@@ -35,10 +35,12 @@ function eightSalts(): Uint8Array[] {
 }
 
 function freshContract() {
-  const contract = new Contract({});
-  const ctorCtx = createConstructorContext(null, dummyUserAddress());
+  const contract = new Contract<null>({});
+  const ctorCtx = createConstructorContext<null>(null, dummyUserAddress());
   const init = contract.initialState(ctorCtx);
-  let circuitCtx = createCircuitContext(
+  // Eclipse declares no witnesses, so private state is `null` throughout;
+  // createCircuitContext infers `unknown` without this annotation.
+  const circuitCtx: CircuitContext<null> = createCircuitContext<null>(
     dummyContractAddress(),
     init.currentZswapLocalState,
     init.currentContractState.data,
@@ -48,7 +50,7 @@ function freshContract() {
 }
 
 function createThenFund(
-  contract: InstanceType<typeof Contract>,
+  contract: Contract<null>,
   circuitCtx: CircuitContext<null>,
   depositTotal: bigint,
 ) {
@@ -77,7 +79,9 @@ describe('distribute sum-proof', () => {
     const after = ledger(context.currentQueryContext.state);
 
     expect(after.status).toBe(STATUS_DISTRIBUTED);
-    expect(after.receiptCommitments[0].some((b) => b !== 0)).toBe(true);
+    const firstCommitment = after.receiptCommitments[0];
+    expect(firstCommitment).toBeDefined();
+    expect(firstCommitment!.some((b) => b !== 0)).toBe(true);
   });
 
   it('distribute_rejects_when_sum_exceeds_total', () => {

@@ -53,8 +53,11 @@ export function addressToBytes32(address: string): Uint8Array {
   const enc = new TextEncoder().encode(address);
   const out = new Uint8Array(32);
   for (let i = 0; i < enc.length; i++) {
-    out[i % 32] ^= enc[i]!;
+    const slot = i % 32;
+    // `slot` is always < 32 and `out` has length 32, but TS's
+    // noUncheckedIndexedAccess cannot relate the two — hence the assertions.
+    out[slot] = (out[slot]! ^ enc[i]!) & 0xff;
   }
-  out[0] ^= enc.length & 0xff;
+  out[0] = (out[0]! ^ (enc.length & 0xff)) & 0xff;
   return out;
 }
