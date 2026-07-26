@@ -72,6 +72,26 @@ export function ObserverPage() {
               )}
             </ul>
           </div>
+          <div>
+            <p className="text-[var(--muted)]">
+              Claimed slots — observers learn <em>which</em> slot claimed, never how much
+            </p>
+            <ul
+              data-testid="observer-claimed"
+              className="mt-1 flex flex-wrap gap-2 font-mono text-xs"
+            >
+              {payroll.claimed.map((flag, i) => (
+                <li
+                  key={i}
+                  className={
+                    flag ? 'text-[var(--accent)]' : 'text-[var(--muted)] opacity-60'
+                  }
+                >
+                  {i}:{flag ? 'claimed' : '—'}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 

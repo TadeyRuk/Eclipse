@@ -70,6 +70,17 @@ class HybridTransport implements EclipseCircuitTransport {
     if (useChain && chain) return chain.distribute(amounts, salts);
     return this.memory.distribute(amounts, salts);
   }
+
+  async claim(
+    slot: number,
+    amount: bigint,
+    recipientPk: Uint8Array,
+    salt: Uint8Array,
+  ): Promise<Payroll> {
+    const chain = this.getChain();
+    if (useChain && chain) return chain.claim(slot, amount, recipientPk, salt);
+    return this.memory.claim(slot);
+  }
 }
 
 export function getSdk(): EclipseSdk {

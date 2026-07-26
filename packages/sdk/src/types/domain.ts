@@ -15,6 +15,11 @@ export interface Payroll {
   recipients: Recipient[];
   status: PayrollStatus;
   receiptCommitments: string[];
+  /**
+   * Per-slot claim flags from the ledger. Public by design: observers learn which
+   * slot claimed and when, never how much. See docs/privacy-model.md.
+   */
+  claimed: boolean[];
 }
 
 export interface Receipt {
