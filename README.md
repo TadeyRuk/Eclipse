@@ -47,7 +47,7 @@ Connect-only works on the hosted site without a proof-server. Create → fund �
 > A redeploy is pending: a cold Preprod dust sync runs ~2 hours and does not resume across
 > attempts, which is the honest reason it is not done yet rather than an oversight.
 
-**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [storyboard](docs/evidence/l2-demo-storyboard.md)
+**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md)
 
 ### Progress (Gantt)
 
