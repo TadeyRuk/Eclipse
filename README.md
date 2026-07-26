@@ -176,6 +176,7 @@ npm test
 | Doc | Contents |
 |---|---|
 | [docs/README.md](docs/README.md) | Docs index |
+| [docs/proposal.md](docs/proposal.md) | Product proposal — idea #6, Private Payroll / Splits |
 | [docs/submission.md](docs/submission.md) | Rise In submission playbook |
 | [docs/architecture.md](docs/architecture.md) | System design |
 | [docs/privacy-model.md](docs/privacy-model.md) | Who learns what |
