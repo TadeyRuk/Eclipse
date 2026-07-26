@@ -1,5 +1,7 @@
 # Eclipse
 
+[![CI](https://github.com/TadeyRuk/Eclipse/actions/workflows/ci.yml/badge.svg)](https://github.com/TadeyRuk/Eclipse/actions/workflows/ci.yml)
+
 Private payroll on [Midnight](https://midnight.network). An employer deposits a fixed pool of tokens and distributes it across a known set of recipients with individually private amounts — a zero-knowledge proof guarantees the hidden amounts sum exactly to the public deposit, so anyone can verify the books balance without anyone, including the chain itself, ever learning who received what.
 
 Built for Rise In's [New Moon to Full: Monthly Moonshots on Midnight](https://www.risein.com/programs/new-moon-to-full-monthly-moonshots-on-midnight) program — Level 3 idea list, *Private Payroll / Splits*.
@@ -167,9 +169,17 @@ Deposit total, recipient list, and distribution success (`status = Distributed` 
 npm test
 ```
 
+20 tests across three workspaces:
+
 - **contracts** — 5 tests: sum-proof + lifecycle
-- **@eclipse/sdk** — Result mapping, salts, ProofClient loopback, mock-port adapters
-- **@eclipse/web** — amount wipe after distribute, observer has no private amount fields, `MAX_RECIPIENTS` validation
+- **@eclipse/sdk** — 11 tests: Result mapping, salts, ProofClient loopback, mock-port adapters
+- **@eclipse/web** — 4 tests: amount wipe after distribute, observer has no private amount fields, `MAX_RECIPIENTS` validation
+
+### CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs typecheck → test → build on every push
+and pull request to `main`. `contracts/managed/` (compiled circuit, keys, zkir) is committed, so CI
+needs neither the Compact compiler nor a proof server, and never touches the network.
 
 ## Documentation
 
