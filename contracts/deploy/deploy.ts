@@ -11,7 +11,11 @@ import {
   type EnvironmentConfiguration,
 } from '@midnight-ntwrk/testkit-js';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { deployContract } from '@midnight-ntwrk/midnight-js-contracts';
+import {
+  deployContract,
+  type ContractProviders,
+  type DeployContractOptions,
+} from '@midnight-ntwrk/midnight-js-contracts';
 import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 import type { WalletFacade } from '@midnight-ntwrk/wallet-sdk';
 
@@ -22,7 +26,10 @@ import {
   registerNightForDust,
   waitForSpendableDust,
 } from './dust.js';
-import { CompiledEclipseContract, zkConfigPath } from '../index.js';
+import { CompiledEclipseContract, zkConfigPath, Contract } from '../index.js';
+
+/** Eclipse's concrete contract type — see lifecycle.ts. */
+type EclipseContractType = InstanceType<typeof Contract>;
 
 // @ts-expect-error Node needs a WebSocket polyfill for indexer subscriptions
 globalThis.WebSocket = WebSocket;
@@ -165,11 +172,17 @@ async function main(): Promise<void> {
   });
 
   logger.info(`Deploying Eclipse contract to ${network}...`);
-  const deployed = await deployContract(providers, {
-    compiledContract: CompiledEclipseContract,
-    privateStateId: PRIVATE_STATE_ID,
-    initialPrivateState: {},
-  });
+  // See lifecycle.ts: testkit types circuit ids as `string`; deployContract wants
+  // this contract's ProvableCircuitId union. Runtime shape is correct.
+  const deployed = await deployContract<EclipseContractType>(
+    providers as unknown as ContractProviders<EclipseContractType>,
+    {
+      compiledContract:
+        CompiledEclipseContract as unknown as DeployContractOptions<EclipseContractType>['compiledContract'],
+      privateStateId: PRIVATE_STATE_ID,
+      initialPrivateState: {},
+    },
+  );
 
   const contractAddress = deployed.deployTxData.public.contractAddress;
   logger.info(`Contract deployed at: ${contractAddress}`);

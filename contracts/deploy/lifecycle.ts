@@ -21,6 +21,7 @@ import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import {
   findDeployedContract,
   getPublicStates,
+  type ContractProviders,
 } from '@midnight-ntwrk/midnight-js-contracts';
 
 import { getConfig } from './config.js';
@@ -30,7 +31,10 @@ import {
   registerNightForDust,
   waitForSpendableDust,
 } from './dust.js';
-import { CompiledEclipseContract, zkConfigPath, ledger } from '../index.js';
+import { CompiledEclipseContract, zkConfigPath, ledger, Contract } from '../index.js';
+
+/** Eclipse's concrete contract type — keeps ProvableCircuitId narrow for callTx. */
+type EclipseContractType = InstanceType<typeof Contract>;
 import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
 
 // @ts-expect-error Node needs a WebSocket polyfill for indexer subscriptions
@@ -161,12 +165,20 @@ async function main(): Promise<void> {
     );
   }
 
-  const found = await findDeployedContract(providers, {
-    contractAddress,
-    compiledContract: CompiledEclipseContract,
-    privateStateId: PRIVATE_STATE_ID,
-    initialPrivateState: {},
-  });
+  // testkit's initializeMidnightProviders types circuit ids as `string`, while
+  // findDeployedContract wants this contract's ProvableCircuitId union. Cast to
+  // ContractProviders for the Eclipse contract specifically — casting to the
+  // unresolved parameter type instead would erase the generic and leave every
+  // callTx member typed `undefined`.
+  const found = await findDeployedContract(
+    providers as unknown as ContractProviders<EclipseContractType>,
+    {
+      contractAddress,
+      compiledContract: CompiledEclipseContract,
+      privateStateId: PRIVATE_STATE_ID,
+      initialPrivateState: {},
+    },
+  );
 
   const deposit = 100n;
   logger.info('Calling createPayroll…');
