@@ -14,9 +14,10 @@ ledger), a verifiable Preprod contract, live demo, and demo video. SDK adapters 
 `Result` boundary; privacy wipe tests cover the amount-clearing claim.
 
 Level 3 First Quarter **in progress** — CI/CD is green (typecheck → test → build on every push), the
-test suite stands at 20 across three workspaces, and the product proposal for idea #6 is drafted
-([docs/proposal.md](docs/proposal.md)). Remaining: real FungibleToken `fund` transfer-in, the `claim`
-circuit, and a one-minute demo video.
+test suite stands at 33 across three workspaces, the `claim` circuit is live end to end (employee
+claims a slot without revealing its amount), and the product proposal for idea #6 is drafted
+([docs/proposal.md](docs/proposal.md)). Remaining: real FungibleToken `fund` transfer-in, a redeploy
+carrying the `claim` circuit, and a one-minute demo video.
 
 Running create → fund → distribute yourself needs a local proof-server on `127.0.0.1:6300` — circuits
 prove locally by design, so this is inherent to Midnight, not a shortcut. Connect-only works on the
@@ -35,10 +36,16 @@ Connect-only works on the hosted site without a proof-server. Create → fund �
 
 ### Contract address
 
-| Network | Address |
-|---|---|
-| Preview | — |
-| Preprod | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) |
+| Network | Address | Circuits |
+|---|---|---|
+| Preview | — | — |
+| Preprod | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) | `createPayroll`, `fund`, `distribute` |
+
+> **Note:** the deployed instance above predates the `claim` circuit — it carries the three L1/L2
+> circuits, and its ledger has no `claimed` vector. The repo now compiles four circuits, so
+> `claim` is exercised by the contract tests and the in-memory demo path, not yet by this address.
+> A redeploy is pending: a cold Preprod dust sync runs ~2 hours and does not resume across
+> attempts, which is the honest reason it is not done yet rather than an oversight.
 
 **Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [storyboard](docs/evidence/l2-demo-storyboard.md)
 
@@ -187,6 +194,7 @@ hashes, opaque without the opening a recipient holds.
 | Deposit total | ✅ | ✅ | ✅ | ✅ |
 | Recipient list | ✅ | ✅ | ✅ | ✅ |
 | Distribution balanced (proven) | ✅ | ✅ | ✅ | ✅ |
+| Which slots have claimed | ✅ | ✅ | ✅ | ✅ |
 | Own amount | ✅ | ✅ | — | ❌ |
 | **Any individual amount from chain data** | ❌ | ❌ | ❌ | ❌ |
 
@@ -202,6 +210,9 @@ proof, so it cannot be confirmed. Recipients trust the math, not the employer.
 - **Small-N inference.** With one recipient, their amount equals the public total; with two, each can
   infer the other's. Amount privacy is meaningful from N=3 upward — a property of the arithmetic, not
   a defect in the circuit.
+- **Claim timing is public.** `claimed[]` is a per-slot flag, so observers learn which recipient
+  claimed and when — never how much. A nullifier-set design would hide the slot too; it was weighed
+  and deferred, since the amount-privacy claim does not depend on it.
 - **The deposit total is public by design.** Observers learn the company distributed 1000 tokens.
   What is protected is the split, not the spend.
 - **The recipient list is public in v1.** Observers learn *who* was paid, not *how much*. Hiding
@@ -216,11 +227,14 @@ Full disclosure ledger and trust assumptions: [docs/privacy-model.md](docs/priva
 npm test
 ```
 
-20 tests across three workspaces:
+33 tests across three workspaces:
 
-- **contracts** — 5 tests: sum-proof + lifecycle
-- **@eclipse/sdk** — 11 tests: Result mapping, salts, ProofClient loopback, mock-port adapters
-- **@eclipse/web** — 4 tests: amount wipe after distribute, observer has no private amount fields, `MAX_RECIPIENTS` validation
+- **contracts** — 10 tests: sum-proof, lifecycle ordering, and claim (valid opening, wrong amount
+  rejected, double-claim rejected, claim-before-distribute rejected)
+- **@eclipse/sdk** — 17 tests: Result mapping, salts, ProofClient loopback, mock-port adapters,
+  receipt-opening storage and the claim path
+- **@eclipse/web** — 6 tests: amount wipe after distribute, employee claims without rendering the
+  amount, observer has no private amount fields, `MAX_RECIPIENTS` validation
 
 ### CI
 
