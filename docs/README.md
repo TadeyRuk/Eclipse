@@ -4,6 +4,7 @@ Private payroll on Midnight. Public design + submission surface for the repo.
 
 | Doc | Contents |
 |---|---|
+| [proposal.md](proposal.md) | Product proposal (idea #6) — problem, privacy claim, L3 scope |
 | [submission.md](submission.md) | Rise In level playbooks, README contract, evidence, pace, risks |
 | [boundaries.md](boundaries.md) | Scope, sequencing gates, numeric guardrails, decision log |
 | [architecture.md](architecture.md) | System design, contract sketch, SDK adapters, security, CI |
