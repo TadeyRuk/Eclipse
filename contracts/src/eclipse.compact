@@ -1,4 +1,4 @@
-// Eclipse — L1: createPayroll + stub fund + distribute
+// Eclipse — createPayroll + stub fund + distribute + claim
 // Spec: docs/architecture.md §3.2
 // Public surface: docs/privacy-model.md (ledger writes only; disclose at write points)
 
@@ -13,6 +13,7 @@ export ledger employer: Bytes<32>;
 export ledger depositTotal: Uint<64>;
 export ledger recipients: Vector<8, Bytes<32>>;
 export ledger receiptCommitments: Vector<8, Bytes<32>>;
+export ledger claimed: Vector<8, Boolean>;
 export ledger status: Status;
 
 constructor() {}
@@ -35,6 +36,53 @@ circuit assertCreated(): [] {
 
 circuit assertFunded(): [] {
   assert(status == Status.Funded, "distribute requires Funded status");
+}
+
+circuit assertDistributed(): [] {
+  assert(status == Status.Distributed, "claim requires Distributed status");
+}
+
+// ZK circuits are fixed arithmetic structures, so a vector index must be known at
+// compile time — there is no runtime addressing. Reading "the value at slot i" is
+// therefore a fold over all eight slots, selecting on equality.
+circuit selectBytes32(slot: Uint<8>, items: Vector<8, Bytes<32>>): Bytes<32> {
+  const zero: Bytes<32> = default<Bytes<32>>;
+  return slot == 0 ? items[0]
+       : slot == 1 ? items[1]
+       : slot == 2 ? items[2]
+       : slot == 3 ? items[3]
+       : slot == 4 ? items[4]
+       : slot == 5 ? items[5]
+       : slot == 6 ? items[6]
+       : slot == 7 ? items[7]
+       : zero;
+}
+
+circuit selectBoolean(slot: Uint<8>, items: Vector<8, Boolean>): Boolean {
+  return slot == 0 ? items[0]
+       : slot == 1 ? items[1]
+       : slot == 2 ? items[2]
+       : slot == 3 ? items[3]
+       : slot == 4 ? items[4]
+       : slot == 5 ? items[5]
+       : slot == 6 ? items[6]
+       : slot == 7 ? items[7]
+       : false;
+}
+
+// Vectors are immutable, so marking one slot means rebuilding all eight:
+// slot i becomes true, every other slot keeps its current flag.
+circuit markClaimed(slot: Uint<8>, current: Vector<8, Boolean>): Vector<8, Boolean> {
+  return [
+    current[0] || slot == 0,
+    current[1] || slot == 1,
+    current[2] || slot == 2,
+    current[3] || slot == 3,
+    current[4] || slot == 4,
+    current[5] || slot == 5,
+    current[6] || slot == 6,
+    current[7] || slot == 7
+  ];
 }
 
 circuit commitRecipient(amount: Uint<64>, recipientPk: Bytes<32>, salt: Bytes<32>): Bytes<32> {
@@ -83,4 +131,27 @@ export circuit distribute(
   const commits = map(commitRecipient, amounts, recipients, salts);
   receiptCommitments = disclose(commits);
   status = Status.Distributed;
+}
+
+// A recipient proves "I am owed the amount committed to my slot" without ever
+// stating the amount. `amount` and `salt` stay private witnesses; the only public
+// write is the claimed flag, so observers learn that slot i claimed — never how
+// much. Disclosure row: docs/privacy-model.md.
+export circuit claim(
+  slot: Uint<8>,
+  amount: Uint<64>,
+  recipientPk: Bytes<32>,
+  salt: Bytes<32>
+): [] {
+  assertDistributed();
+  assert(slot < 8, "slot out of range");
+
+  // Re-deriving the commitment proves knowledge of the exact (amount, pk, salt)
+  // triple that distribute() committed. A wrong amount yields a different hash.
+  const expected = commitRecipient(amount, recipientPk, salt);
+  assert(expected == selectBytes32(slot, receiptCommitments), "commitment mismatch for slot");
+  assert(recipientPk == selectBytes32(slot, recipients), "recipient does not own this slot");
+  assert(!selectBoolean(slot, claimed), "slot already claimed");
+
+  claimed = disclose(markClaimed(slot, claimed));
 }

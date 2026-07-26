@@ -14,6 +14,7 @@ Level 3 requires a README section: "what an observer can and cannot learn." This
 | Deposit total (pool size) | ✅ | ✅ | ✅ | ✅ |
 | Recipient list (addresses) | ✅ | ✅ | ✅ | ✅ (v1 — see boundaries) |
 | Distribution happened & is balanced (sum == total, proven) | ✅ | ✅ | ✅ | ✅ (`status = Distributed`) |
+| Which slots have claimed (`claimed[]`) | ✅ | ✅ | ✅ | ✅ |
 | **Own amount** | ✅ (they set it / local records) | ✅ | — | ❌ |
 | **Any individual amount, from on-chain data** | ❌ | ❌ | ❌ | ❌ |
 | Which recipient got more/less than another | ❌* | ❌ | ❌ | ❌ |
@@ -32,7 +33,7 @@ Every public fact maps to a **ledger field or return**, not to `disclose()` alon
 | `fund` (stub at L1) | Ledger: `depositTotal`, `status = Funded` | Public anchor the sum-proof binds against (L1 stub; post-L1 also inherent to token transfer) |
 | `distribute` | Ledger: `status = Distributed` | Core public claim — books provably balanced (no separate boolean field) |
 | `distribute` | Ledger: `receiptCommitments` | Opaque hashes; enable recipient claims later; reveal nothing without opening |
-| `claim` (post-L1) | Return / caller-scoped validity only | Proves “I am owed my committed amount” without stating the amount |
+| `claim` | Ledger: `claimed[slot] = true` | Prevents double-claiming; proves “I am owed my committed amount” by re-deriving the commitment from private `amount` + `salt`. The amount is never written |
 
 Witnesses that **never** become ledger state: `amounts[]`, `salts[]`.
 
@@ -43,6 +44,11 @@ Witnesses that **never** become ledger state: `amounts[]`, `salts[]`.
 - **Small-N inference:** with 1 recipient, their amount = the public total. With 2, each recipient can infer the other's (total − own). Amounts-privacy is meaningful from N=3 upward; the app should warn below that.
 - **Deposit total is public by design** — anyone can see the company distributed 1000 tokens. What's protected is the split, not the spend.
 - **Recipient list is public in v1** — an observer learns who got paid by this employer, not how much. Hiding membership is a possible v2 (Merkle-committed recipient set), out of scope per boundaries.md.
+- **Claim timing is public.** `claimed[]` is a per-slot flag, so observers learn *which* recipient
+  claimed and *when* — never how much. Since the recipient list is already public in v1, this adds
+  timing metadata rather than identity. A nullifier-set design (publishing `H(salt)` instead of a
+  slot flag) would hide the slot too; it was weighed against the v1 timeline and deferred, since the
+  amount-privacy claim does not depend on it.
 - **Off-chain leakage is out of scope:** if the employer emails a spreadsheet around, no chain can help.
 
 ---
