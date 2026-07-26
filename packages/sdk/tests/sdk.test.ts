@@ -7,7 +7,9 @@ import {
   padAmounts,
   sumAmounts,
   addressToBytes32,
+  bytesToHex,
 } from '../src/contract/witnessHelpers';
+import { MemoryReceiptStore } from '../src/private/MemoryReceiptStore';
 import {
   InMemoryEclipseTransport,
   MidnightAdapter,
@@ -125,9 +127,14 @@ describe('MidnightAdapter lifecycle (in-memory transport)', () => {
       expect(dist.value).not.toHaveProperty('amounts');
     }
 
+    // The in-memory transport implements no claim circuit, so this fails on
+    // transport support rather than on a missing receipt.
     const claim = await adapter.claim();
     expect(claim.ok).toBe(false);
-    if (!claim.ok) expect(claim.error.kind).toBe('CircuitRejected');
+    if (!claim.ok) {
+      expect(claim.error.kind).toBe('CircuitRejected');
+      expect(claim.error.message).toMatch(/does not support claim/);
+    }
   });
 
   it('distribute rejects when wallet disconnected', async () => {
@@ -161,6 +168,120 @@ describe('MidnightAdapter lifecycle (in-memory transport)', () => {
     const res = await adapter.distribute([11n]);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.kind).toBe('CircuitRejected');
+  });
+});
+
+describe('claim (private receipt openings)', () => {
+  /** Transport that records what the claim circuit was actually given. */
+  function claimingTransport() {
+    const base = new InMemoryEclipseTransport();
+    const calls: { slot: number; amount: bigint; salt: string }[] = [];
+    const transport = {
+      queryPublicPayroll: () => base.queryPublicPayroll(),
+      createPayroll: (pk: Uint8Array, r: Uint8Array[]) => base.createPayroll(pk, r),
+      fund: (a: bigint) => base.fund(a),
+      distribute: (a: bigint[], s: Uint8Array[]) => base.distribute(a, s),
+      claim: async (slot: number, amount: bigint, _pk: Uint8Array, salt: Uint8Array) => {
+        calls.push({ slot, amount, salt: bytesToHex(salt) });
+        return base.queryPublicPayroll();
+      },
+    };
+    return { transport, calls };
+  }
+
+  async function distributedAdapter() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('ok', { status: 200 })),
+    );
+    const { transport, calls } = claimingTransport();
+    const store = new MemoryReceiptStore();
+    const adapter = new MidnightAdapter(
+      new ProofClient({ proofServerUrl: 'http://127.0.0.1:6300' }),
+      mockWallet(true),
+      { contractAddress: 'deadbeef', network: 'preprod', transport, receiptStore: store },
+    );
+    await adapter.createPayroll(['11'.repeat(32), '22'.repeat(32)]);
+    await adapter.fund(100n);
+    await adapter.distribute([60n, 40n]);
+    return { adapter, calls, store };
+  }
+
+  it('distribute persists an opening per funded slot only', async () => {
+    const { store } = await distributedAdapter();
+    const receipts = await store.list('deadbeef');
+
+    // Two funded slots out of eight — zero-amount padding must not be stored.
+    expect(receipts.map((r) => r.slot)).toEqual([0, 1]);
+    expect(receipts.map((r) => r.amount)).toEqual([60n, 40n]);
+    for (const r of receipts) expect(r.saltHex).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('claim passes the stored amount and salt to the circuit', async () => {
+    const { adapter, calls, store } = await distributedAdapter();
+    const stored = await store.get('deadbeef', 1);
+
+    const res = await adapter.claim(1);
+    expect(res.ok).toBe(true);
+
+    // The salt reaching the circuit must be the one distribute() committed —
+    // a regenerated salt would produce a different hash and fail on-chain.
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.slot).toBe(1);
+    expect(calls[0]!.amount).toBe(40n);
+    expect(calls[0]!.salt).toBe(stored!.saltHex);
+  });
+
+  it('claim rejects a slot with no local receipt', async () => {
+    const { adapter } = await distributedAdapter();
+    const res = await adapter.claim(5);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.message).toMatch(/no local receipt for slot 5/);
+  });
+
+  it('claim rejects an out-of-range slot', async () => {
+    const { adapter } = await distributedAdapter();
+    const res = await adapter.claim(MAX_RECIPIENTS);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.message).toMatch(/slot must be 0\.\./);
+  });
+
+  it('claim rejects when the wallet is disconnected', async () => {
+    const { transport } = claimingTransport();
+    const adapter = new MidnightAdapter(
+      new ProofClient({ proofServerUrl: 'http://127.0.0.1:6300' }),
+      mockWallet(false),
+      { contractAddress: 'deadbeef', network: 'preprod', transport },
+    );
+    const res = await adapter.claim(0);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.kind).toBe('WalletNotConnected');
+  });
+
+  it('local receipts never expose amounts on the public payroll', async () => {
+    const { adapter } = await distributedAdapter();
+    const payroll = await adapter.getPublicPayroll();
+    expect(payroll.ok).toBe(true);
+    if (payroll.ok) {
+      // Assert on shape, not on serialized bytes: commitments are random hex, so
+      // any short decimal string ("60") appears inside them by chance. The real
+      // claim is that no amount-bearing field exists on the public snapshot.
+      expect(payroll.value).not.toHaveProperty('amounts');
+      expect(payroll.value).not.toHaveProperty('salts');
+      expect(Object.keys(payroll.value).sort()).toEqual([
+        'depositTotal',
+        'employer',
+        'receiptCommitments',
+        'recipients',
+        'status',
+      ]);
+      // depositTotal is the public pool total, never a per-recipient amount.
+      expect(payroll.value.depositTotal).toBe(100n);
+      // Recipients carry addresses only — no amount rides along.
+      for (const r of payroll.value.recipients) {
+        expect(Object.keys(r)).toEqual(['address']);
+      }
+    }
   });
 });
 

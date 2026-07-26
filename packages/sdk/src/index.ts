@@ -2,6 +2,8 @@ export * from './types';
 export * from './wallet/WalletPort';
 export * from './wallet/LaceAdapter';
 export * from './contract/EclipsePort';
+export * from './private/ReceiptStorePort';
+export * from './private/MemoryReceiptStore';
 export * from './contract/MidnightAdapter';
 export * from './contract/MidnightJsTransport';
 export * from './contract/witnessHelpers';

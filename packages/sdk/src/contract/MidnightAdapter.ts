@@ -6,10 +6,14 @@ import type { ProofClient } from '../proof/ProofClient';
 import type { WalletPort } from '../wallet/WalletPort';
 import type { LaceAdapter } from '../wallet/LaceAdapter';
 import type { EclipsePort } from './EclipsePort';
+import type { ReceiptStorePort } from '../private/ReceiptStorePort';
+import type { ReceiptRecord } from '../types/receiptRecord';
+import { MemoryReceiptStore } from '../private/MemoryReceiptStore';
 import {
   addressToBytes32,
   bytesToHex,
   generateSalts,
+  hexToBytes32,
   padAmounts,
   sumAmounts,
 } from './witnessHelpers';
@@ -22,6 +26,12 @@ export type MidnightAdapterConfig = {
    * Production wires Midnight.js here; tests inject a mock.
    */
   transport?: EclipseCircuitTransport;
+  /**
+   * Private store for receipt openings. Defaults to in-memory, which means
+   * receipts are lost on reload — the safe failure mode, since the alternative
+   * is persisting private openings unencrypted.
+   */
+  receiptStore?: ReceiptStorePort;
 };
 
 /**
@@ -33,6 +43,13 @@ export interface EclipseCircuitTransport {
   createPayroll(employerPk: Uint8Array, recipients: Uint8Array[]): Promise<Payroll>;
   fund(amount: bigint): Promise<Payroll>;
   distribute(amounts: bigint[], salts: Uint8Array[]): Promise<Payroll>;
+  /** Opens one receipt commitment. `amount` and `salt` stay private witnesses. */
+  claim?(
+    slot: number,
+    amount: bigint,
+    recipientPk: Uint8Array,
+    salt: Uint8Array,
+  ): Promise<Payroll>;
 }
 
 const STATUS_RANK: Record<PayrollStatus, number> = {
@@ -132,6 +149,7 @@ export class MidnightAdapter implements EclipsePort {
   private readonly lace: LaceAdapter | null;
   private readonly transport: EclipseCircuitTransport;
   private readonly contractAddress: string;
+  private readonly receipts: ReceiptStorePort;
 
   constructor(
     proof: ProofClient,
@@ -144,6 +162,7 @@ export class MidnightAdapter implements EclipsePort {
     this.lace = lace ?? null;
     this.contractAddress = config.contractAddress;
     this.transport = config.transport ?? new InMemoryEclipseTransport();
+    this.receipts = config.receiptStore ?? new MemoryReceiptStore();
   }
 
   async getPublicPayroll(): Promise<Result<Payroll>> {
@@ -205,7 +224,23 @@ export class MidnightAdapter implements EclipsePort {
 
     return safeAsync('CircuitRejected', 'distribute rejected', async () => {
       try {
-        return await this.transport.distribute(padded, salts);
+        const payroll = await this.transport.distribute(padded, salts);
+
+        // Persist openings BEFORE the wipe below — claim() re-derives
+        // H(amount, pk, salt), so a lost salt makes a slot permanently
+        // unclaimable. Only non-zero slots are real recipients.
+        for (let slot = 0; slot < padded.length; slot++) {
+          const amount = padded[slot]!;
+          if (amount === 0n) continue;
+          await this.receipts.put(this.contractAddress, {
+            slot,
+            recipient: payroll.recipients[slot]?.address ?? '',
+            amount,
+            saltHex: bytesToHex(salts[slot]!),
+          });
+        }
+
+        return payroll;
       } finally {
         // Best-effort wipe
         for (const s of salts) s.fill(0);
@@ -213,8 +248,51 @@ export class MidnightAdapter implements EclipsePort {
     });
   }
 
-  async claim(): Promise<Result<Receipt>> {
-    return err('CircuitRejected', 'claim is post-L2');
+  /**
+   * Prove entitlement to `slot` without revealing the amount.
+   *
+   * The opening comes from local private storage; the amount and salt are passed
+   * to the circuit as witnesses and never written to the ledger. The only public
+   * effect is `claimed[slot] = true`.
+   */
+  async claim(slot = 0): Promise<Result<Receipt>> {
+    if (!this.wallet.state().connected) {
+      return err('WalletNotConnected', 'Connect Lace before claim');
+    }
+    if (!Number.isInteger(slot) || slot < 0 || slot >= MAX_RECIPIENTS) {
+      return err('CircuitRejected', `slot must be 0..${MAX_RECIPIENTS - 1}`);
+    }
+    if (!this.transport.claim) {
+      return err('CircuitRejected', 'transport does not support claim');
+    }
+
+    const record = await this.receipts.get(this.contractAddress, slot);
+    if (!record) {
+      return err('CircuitRejected', `no local receipt for slot ${slot}`);
+    }
+
+    const health = await this.proof.healthCheck();
+    if (!health.ok) return health;
+
+    const salt = hexToBytes32(record.saltHex);
+    return safeAsync('CircuitRejected', 'claim rejected', async () => {
+      try {
+        await this.transport.claim!(
+          slot,
+          record.amount,
+          addressToBytes32(record.recipient),
+          salt,
+        );
+        return { recipient: record.recipient, commitment: '' } satisfies Receipt;
+      } finally {
+        salt.fill(0);
+      }
+    });
+  }
+
+  /** Openings this wallet holds locally. Never leaves the device. */
+  async listLocalReceipts(): Promise<ReceiptRecord[]> {
+    return this.receipts.list(this.contractAddress);
   }
 
   /** Test helper — not part of EclipsePort. */
