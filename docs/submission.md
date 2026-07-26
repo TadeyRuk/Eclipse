@@ -57,7 +57,16 @@ Progress chart: root [README.md](../README.md#progress-gantt).
 - Netlify live demo: [https://eclipse-private-payroll.netlify.app](https://eclipse-private-payroll.netlify.app) (`/employer`, `/observer`)
 - Chain strengthen: `MidnightJsEclipseTransport` + `VITE_USE_CHAIN=1`; `npm run lifecycle` for seed-wallet Preprod create→fund→distribute; proof-server pin `8.1.0`
 - Tag: `level-2` on commit `247b1c7` (pushed)
-- Remaining: complete one live Preprod `callTx` (wallet needs spendable tDUST), re-film demo if needed, file on Rise In
+- **Every L2 requirement is met** (see §3.2 table); remaining work is filing on Rise In
+- **Deferred to L3 — live Preprod `callTx`:** `npm run lifecycle` performs a seed-wallet
+  create→fund→distribute against the deployed contract. Not yet run to completion: the testkit dust
+  sync wedges on long Preprod confirmations (watchdog in `contracts/deploy/run-lifecycle-watchdog.sh`
+  restarts it). This is a *strengthening* goal, not an L2 pass condition — L2 requires a circuit
+  called from the frontend (done, `VITE_USE_CHAIN=1` path) and a verifiable Preprod address (done).
+  L3's full-flow requirement is where this evidence belongs; it will write
+  `docs/evidence/l2-onchain-lifecycle.json`.
+- On-chain status as of 2026-07-26: contract `3aec836e…` decodes to `status=Uninitialized`,
+  `depositTotal=0` — no lifecycle tx has landed, so the address is still valid for a future run
 
 ---
 
