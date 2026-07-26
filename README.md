@@ -6,9 +6,16 @@ Built for Rise In's [New Moon to Full: Monthly Moonshots on Midnight](https://ww
 
 ## Status
 
-Level 2 Waxing Crescent **ready to file**: Lace-connected dual-view UI (employer wizard + observer ledger), hardened SDK adapters (`Result` boundary), privacy wipe tests, and Preprod contract from L1. Live demo on Netlify; full distribute needs a local proof-server (honest — same class as Midnight hello-world docs).
+Level 2 Waxing Crescent **ready to file** — all requirements met: Lace connect/disconnect, a circuit
+called from the frontend, observable privacy via the dual-view UI (employer wizard + observer
+ledger), a verifiable Preprod contract, live demo, and demo video. SDK adapters sit behind a
+`Result` boundary; privacy wipe tests cover the amount-clearing claim.
 
-**Last updated:** 2026-07-20 · Program window: 2026-06-29 → 2026-07-31
+Running create → fund → distribute yourself needs a local proof-server on `127.0.0.1:6300` — circuits
+prove locally by design, so this is inherent to Midnight, not a shortcut. Connect-only works on the
+hosted demo without one.
+
+**Last updated:** 2026-07-26 · Program window: 2026-06-29 → 2026-07-31
 
 ### Live demo
 
