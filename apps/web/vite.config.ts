@@ -18,7 +18,14 @@ export default defineConfig({
     target: 'esnext',
   },
   optimizeDeps: {
-    exclude: ['@midnight-ntwrk/ledger-v8'],
+    exclude: [
+      '@midnight-ntwrk/ledger-v8',
+      '@midnight-ntwrk/midnight-js-protocol',
+      '@midnight-ntwrk/midnight-js-types',
+      '@midnight-ntwrk/midnight-js-contracts',
+      '@midnight-ntwrk/midnight-js-http-client-proof-provider',
+      '@midnight-ntwrk/midnight-js-indexer-public-data-provider',
+    ],
   },
   test: {
     environment: 'jsdom',
