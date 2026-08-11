@@ -13,6 +13,7 @@ contracts/midnight-level-db/
 
 contracts/managed/keys/
 apps/web/.vite/
+docs/evidence/l3-video/out/
 
 # Agent / local-only (not for public review)
 CLAUDE.md
