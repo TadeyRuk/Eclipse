@@ -1,8 +1,12 @@
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { MAX_RECIPIENTS } from '@eclipse/sdk';
 import { getSdk, explorerContractUrl } from '../sdk';
 import { useSession } from '../state/session';
 import { validateAmounts, validateRecipients } from '../lib/validate';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Pill } from '../components/ui/Pill';
 
 export function EmployerPage() {
   const step = useSession((s) => s.step);
@@ -80,7 +84,6 @@ export function EmployerPage() {
       return;
     }
     setPayroll(res.value);
-    // Align amount slots with recipient count
     const n = recipients.filter((r) => r.trim()).length;
     setAmounts(Array.from({ length: n }, () => ''));
     setStep('amounts');
@@ -115,7 +118,6 @@ export function EmployerPage() {
       return;
     }
     setPayroll(res.value);
-    // Privacy wipe — amounts must not remain in the DOM after success
     setAmounts([]);
     setStep('prove');
   }
@@ -124,130 +126,153 @@ export function EmployerPage() {
 
   return (
     <section>
-      <h2 className="display mb-2 text-3xl">Employer</h2>
-      <p className="mb-8 text-[var(--muted)]">
+      <h2 className="display mb-2 text-3xl text-[var(--eclipse-ink-on-field)]">Employer</h2>
+      <p className="mb-8 text-[var(--eclipse-ink-muted)]">
         Create → fund → distribute. Individual amounts stay private; only status and commitments
         become public.
       </p>
 
-      <ol className="mb-8 flex flex-wrap gap-3 text-xs uppercase tracking-wider text-[var(--muted)]">
+      <div className="mb-8 flex flex-wrap gap-2">
         {(['recipients', 'deposit', 'amounts', 'prove'] as const).map((s) => (
-          <li key={s} className={step === s ? 'text-[var(--accent)]' : ''}>
+          <Pill key={s} active={step === s}>
             {s}
-          </li>
+          </Pill>
         ))}
-      </ol>
+      </div>
 
-      {step === 'recipients' ? (
-        <div className="space-y-4">
-          {recipients.map((r, i) => (
-            <input
-              key={i}
-              data-testid={`recipient-${i}`}
-              value={r}
-              onChange={(e) => updateRecipient(i, e.target.value)}
-              placeholder={`Recipient ${i + 1} address`}
-              className="w-full rounded border border-[var(--line)] bg-[var(--bg1)] px-3 py-2 font-mono text-sm"
-            />
-          ))}
-          <div className="flex gap-2">
-            {recipients.length < MAX_RECIPIENTS ? (
-              <button
-                type="button"
-                className="text-sm text-[var(--accent)]"
-                onClick={() => setRecipients((p) => [...p, ''])}
-              >
-                Add recipient
-              </button>
-            ) : null}
+      <AnimatePresence mode="wait">
+        {step === 'recipients' ? (
+          <motion.div
+            key="recipients"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+          >
+            <Card className="space-y-4">
+              {recipients.map((r, i) => (
+                <input
+                  key={i}
+                  data-testid={`recipient-${i}`}
+                  value={r}
+                  onChange={(e) => updateRecipient(i, e.target.value)}
+                  placeholder={`Recipient ${i + 1} address`}
+                  className="w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-sm text-[var(--eclipse-ink)]"
+                />
+              ))}
+              <div className="flex items-center gap-2">
+                {recipients.length < MAX_RECIPIENTS ? (
+                  <button
+                    type="button"
+                    className="text-sm text-[var(--eclipse-ink-muted)] underline"
+                    onClick={() => setRecipients((p) => [...p, ''])}
+                  >
+                    Add recipient
+                  </button>
+                ) : null}
+                <div className="ml-auto">
+                  <Button
+                    testId="create-payroll"
+                    disabled={!wallet.connected}
+                    onClick={() => void runCreate()}
+                  >
+                    Create payroll
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        ) : null}
+
+        {step === 'deposit' ? (
+          <motion.div
+            key="deposit"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+          >
+            <Card className="space-y-4">
+              <label className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
+                Deposit total (public)
+                <input
+                  data-testid="deposit-input"
+                  value={deposit}
+                  onChange={(e) => setDeposit(e.target.value)}
+                  className="mt-1 w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-[var(--eclipse-ink)]"
+                />
+              </label>
+              <Button testId="fund-payroll" onClick={() => void runFund()}>
+                Stub fund
+              </Button>
+            </Card>
+          </motion.div>
+        ) : null}
+
+        {step === 'amounts' ? (
+          <motion.div
+            key="amounts"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+          >
+            <Card className="space-y-4">
+              <p className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">
+                Private amounts for {activeRecipients.length} recipient(s). Sum must equal {deposit}
+                .
+              </p>
+              {activeRecipients.map((_, i) => (
+                <label key={i} className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
+                  Private amount {i + 1}
+                  <input
+                    data-testid={`amount-${i}`}
+                    value={amounts[i] ?? ''}
+                    onChange={(e) => updateAmount(i, e.target.value)}
+                    className="mt-1 w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-[var(--eclipse-ink)]"
+                  />
+                </label>
+              ))}
+              <Button testId="distribute" onClick={() => void runDistribute()}>
+                Prove &amp; distribute
+              </Button>
+            </Card>
+          </motion.div>
+        ) : null}
+
+        {step === 'prove' && payroll ? (
+          <motion.div
+            key="prove"
+            data-testid="distribute-success"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="space-y-4"
+          >
+            <Card className="bg-[var(--eclipse-accent)] text-[var(--eclipse-ink)]">
+              <p className="font-medium">Distributed. Private amounts cleared from this view.</p>
+            </Card>
+            <PublicPayrollCard payroll={payroll} />
+            <a
+              className="inline-block text-sm text-[var(--eclipse-ink-on-field)] underline"
+              href={explorerContractUrl()}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open Preprod explorer
+            </a>
             <button
               type="button"
-              data-testid="create-payroll"
-              disabled={!wallet.connected}
-              onClick={() => void runCreate()}
-              className="ml-auto rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--bg0)] disabled:opacity-40"
+              className="block text-sm text-[var(--eclipse-ink-muted)] underline"
+              onClick={() => {
+                resetFlow();
+                setRecipients(['']);
+                setAmounts(['']);
+                setPayroll(null);
+              }}
             >
-              Create payroll
+              Start over
             </button>
-          </div>
-        </div>
-      ) : null}
-
-      {step === 'deposit' ? (
-        <div className="space-y-4">
-          <label className="block text-sm text-[var(--muted)]">
-            Deposit total (public)
-            <input
-              data-testid="deposit-input"
-              value={deposit}
-              onChange={(e) => setDeposit(e.target.value)}
-              className="mt-1 w-full rounded border border-[var(--line)] bg-[var(--bg1)] px-3 py-2 font-mono"
-            />
-          </label>
-          <button
-            type="button"
-            data-testid="fund-payroll"
-            onClick={() => void runFund()}
-            className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--bg0)]"
-          >
-            Stub fund
-          </button>
-        </div>
-      ) : null}
-
-      {step === 'amounts' ? (
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--muted)]">
-            Private amounts for {activeRecipients.length} recipient(s). Sum must equal {deposit}.
-          </p>
-          {activeRecipients.map((_, i) => (
-            <label key={i} className="block text-sm text-[var(--muted)]">
-              Private amount {i + 1}
-              <input
-                data-testid={`amount-${i}`}
-                value={amounts[i] ?? ''}
-                onChange={(e) => updateAmount(i, e.target.value)}
-                className="mt-1 w-full rounded border border-[var(--line)] bg-[var(--bg1)] px-3 py-2 font-mono"
-              />
-            </label>
-          ))}
-          <button
-            type="button"
-            data-testid="distribute"
-            onClick={() => void runDistribute()}
-            className="rounded bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--bg0)]"
-          >
-            Prove &amp; distribute
-          </button>
-        </div>
-      ) : null}
-
-      {step === 'prove' && payroll ? (
-        <div className="space-y-4" data-testid="distribute-success">
-          <p className="text-[var(--ok)]">Distributed. Private amounts cleared from this view.</p>
-          <PublicPayrollCard payroll={payroll} />
-          <a
-            className="inline-block text-sm text-[var(--accent)] underline"
-            href={explorerContractUrl()}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open Preprod explorer
-          </a>
-          <button
-            type="button"
-            className="block text-sm text-[var(--muted)]"
-            onClick={() => {
-              resetFlow();
-              setRecipients(['']);
-              setAmounts(['']);
-              setPayroll(null);
-            }}
-          >
-            Start over
-          </button>
-        </div>
-      ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }
@@ -258,17 +283,17 @@ function PublicPayrollCard({
   payroll: NonNullable<ReturnType<typeof useSession.getState>['payroll']>;
 }) {
   return (
-    <div
-      data-testid="public-payroll"
-      className="rounded border border-[var(--line)] bg-[var(--bg1)] p-4 text-sm"
-    >
+    <Card testId="public-payroll" className="text-sm">
       <p>
-        <span className="text-[var(--muted)]">Status:</span> {payroll.status}
+        <span className="text-[var(--eclipse-ink-muted-on-surface)]">Status:</span> {payroll.status}
       </p>
       <p>
-        <span className="text-[var(--muted)]">Deposit total:</span> {payroll.depositTotal.toString()}
+        <span className="text-[var(--eclipse-ink-muted-on-surface)]">Deposit total:</span>{' '}
+        {payroll.depositTotal.toString()}
       </p>
-      <p className="mt-2 text-[var(--muted)]">Commitments (public, opaque)</p>
+      <p className="mt-2 text-[var(--eclipse-ink-muted-on-surface)]">
+        Commitments (public, opaque)
+      </p>
       <ul className="mt-1 space-y-1 font-mono text-xs break-all">
         {payroll.receiptCommitments
           .filter((c) => c.replace(/0/g, '') !== '')
@@ -276,6 +301,6 @@ function PublicPayrollCard({
             <li key={c}>{c}</li>
           ))}
       </ul>
-    </div>
+    </Card>
   );
 }

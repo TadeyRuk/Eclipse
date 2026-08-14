@@ -26,6 +26,15 @@ export default defineConfig({
       '@midnight-ntwrk/midnight-js-http-client-proof-provider',
       '@midnight-ntwrk/midnight-js-indexer-public-data-provider',
     ],
+    include: [
+      'object-inspect',
+      'buffer',
+      'cross-fetch',
+      'fetch-retry',
+      'pino',
+      'isomorphic-ws',
+      '@subsquid/scale-codec',
+    ],
   },
   test: {
     environment: 'jsdom',

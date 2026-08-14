@@ -92,3 +92,4 @@ Filing checklists, pace, and README evidence rules: [submission.md](submission.m
 | 2026-07-19 | Kill-switch: equal-splits after ~2 days | Conscious fallback, not drift |
 | 2026-07-19 | Three adapters only; factory + constructor injection | Maintainability; boundaries tripwire |
 | 2026-07-19 | Local docs gitignored; public README gains L1/L3 sections at file time | Judges see README; planning stays private |
+| 2026-08-14 | UI visual overhaul added `framer-motion` and `lucide-react` as dependencies, overriding the Complexity Tripwire | Eclipse is past Gate 4 (L3 filed per `docs/status.md`); sequencing risk this tripwire protects against has passed. See `docs/superpowers/specs/2026-08-14-ui-visual-overhaul-design.md` |
