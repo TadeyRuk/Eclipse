@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Card } from './Card';
 import { Tag } from './Tag';
+import { Button } from './Button';
+import { Pill } from './Pill';
 
 describe('Card', () => {
   it('renders children and forwards testId as data-testid', () => {
@@ -24,5 +26,41 @@ describe('Tag', () => {
   it('defaults to the default tone class', () => {
     render(<Tag>Pending</Tag>);
     expect(screen.getByText('Pending').className).toContain('bg-[var(--eclipse-tag-bg)]');
+  });
+});
+
+describe('Button', () => {
+  it('renders children and forwards testId, onClick, disabled', async () => {
+    let clicked = false;
+    render(
+      <Button testId="my-btn" onClick={() => (clicked = true)}>
+        Click me
+      </Button>,
+    );
+    const btn = screen.getByTestId('my-btn');
+    expect(btn).toHaveTextContent('Click me');
+    btn.click();
+    expect(clicked).toBe(true);
+  });
+
+  it('applies disabled attribute', () => {
+    render(
+      <Button testId="my-btn" disabled>
+        x
+      </Button>,
+    );
+    expect(screen.getByTestId('my-btn')).toBeDisabled();
+  });
+
+  it('defaults to primary variant classes', () => {
+    render(<Button testId="my-btn">x</Button>);
+    expect(screen.getByTestId('my-btn').className).toContain('bg-[var(--eclipse-accent)]');
+  });
+});
+
+describe('Pill', () => {
+  it('renders children', () => {
+    render(<Pill>Employer</Pill>);
+    expect(screen.getByText('Employer')).toBeInTheDocument();
   });
 });
