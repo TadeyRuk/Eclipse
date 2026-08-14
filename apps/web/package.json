@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@eclipse/sdk": "*",
+    "framer-motion": "^13.1.0",
+    "lucide-react": "^1.31.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",
