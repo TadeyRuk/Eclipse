@@ -4,6 +4,9 @@ import { Card } from './Card';
 import { Tag } from './Tag';
 import { Button } from './Button';
 import { Pill } from './Pill';
+import { StatChip } from './StatChip';
+import { GradientField } from './GradientField';
+import { Users } from 'lucide-react';
 
 describe('Card', () => {
   it('renders children and forwards testId as data-testid', () => {
@@ -62,5 +65,24 @@ describe('Pill', () => {
   it('renders children', () => {
     render(<Pill>Employer</Pill>);
     expect(screen.getByText('Employer')).toBeInTheDocument();
+  });
+});
+
+describe('StatChip', () => {
+  it('renders icon, value and label', () => {
+    render(<StatChip icon={Users} label="Recipients" value={3} />);
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Recipients')).toBeInTheDocument();
+  });
+});
+
+describe('GradientField', () => {
+  it('renders children', () => {
+    render(
+      <GradientField>
+        <p>content</p>
+      </GradientField>,
+    );
+    expect(screen.getByText('content')).toBeInTheDocument();
   });
 });
