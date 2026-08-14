@@ -15,7 +15,11 @@ describe('Card', () => {
   });
 
   it('merges extra className', () => {
-    render(<Card testId="my-card" className="extra-class">x</Card>);
+    render(
+      <Card testId="my-card" className="extra-class">
+        x
+      </Card>,
+    );
     expect(screen.getByTestId('my-card').className).toContain('extra-class');
   });
 });
