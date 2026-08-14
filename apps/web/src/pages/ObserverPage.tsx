@@ -59,15 +59,15 @@ export function ObserverPage() {
 
           <Card className="space-y-3 text-sm">
             <p data-testid="observer-status">
-              <span className="text-[var(--eclipse-ink-muted)]">Status:</span>{' '}
+              <span className="text-[var(--eclipse-ink-muted-on-surface)]">Status:</span>{' '}
               <Tag tone="accent">{payroll.status}</Tag>
             </p>
             <p>
-              <span className="text-[var(--eclipse-ink-muted)]">Employer:</span>{' '}
+              <span className="text-[var(--eclipse-ink-muted-on-surface)]">Employer:</span>{' '}
               <span className="font-mono text-xs break-all">{payroll.employer || '—'}</span>
             </p>
             <div>
-              <p className="text-[var(--eclipse-ink-muted)]">Recipients (public addresses)</p>
+              <p className="text-[var(--eclipse-ink-muted-on-surface)]">Recipients (public addresses)</p>
               <ul className="mt-1 space-y-1 font-mono text-xs break-all">
                 {payroll.recipients.map((r) => (
                   <li key={r.address}>{r.address}</li>
@@ -75,7 +75,7 @@ export function ObserverPage() {
               </ul>
             </div>
             <div>
-              <p className="text-[var(--eclipse-ink-muted)]">Receipt commitments</p>
+              <p className="text-[var(--eclipse-ink-muted-on-surface)]">Receipt commitments</p>
               <ul className="mt-1 space-y-1 font-mono text-xs break-all">
                 {payroll.receiptCommitments.length === 0 ? (
                   <li>—</li>
@@ -85,7 +85,7 @@ export function ObserverPage() {
               </ul>
             </div>
             <div>
-              <p className="text-[var(--eclipse-ink-muted)]">
+              <p className="text-[var(--eclipse-ink-muted-on-surface)]">
                 Claimed slots — observers learn <em>which</em> slot claimed, never how much
               </p>
               <ul data-testid="observer-claimed" className="mt-1 flex flex-wrap gap-2">

@@ -70,7 +70,11 @@ export function Shell({ children }: { children: ReactNode }) {
       <nav className="mb-8 flex gap-1 rounded-full bg-[var(--eclipse-surface)]/10 p-1">
         {ROUTES.map(({ to, label }) => (
           <NavLink key={to} to={to} className="flex-1">
-            {({ isActive }) => <Pill active={isActive} className="w-full justify-center">{label}</Pill>}
+            {({ isActive }) => (
+              <Pill active={isActive} className="w-full justify-center">
+                {label}
+              </Pill>
+            )}
           </NavLink>
         ))}
       </nav>

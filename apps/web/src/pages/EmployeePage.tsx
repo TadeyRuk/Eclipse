@@ -72,12 +72,12 @@ export function EmployeePage() {
       </p>
 
       {!distributed ? (
-        <Card className="text-sm text-[var(--eclipse-ink-muted)]">
+        <Card className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">
           Nothing to claim yet — the payroll must be distributed first. Current status:{' '}
           {payroll?.status ?? 'loading…'}
         </Card>
       ) : receipts.length === 0 ? (
-        <Card testId="employee-no-receipts" className="text-sm text-[var(--eclipse-ink-muted)]">
+        <Card testId="employee-no-receipts" className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">
           No local receipt found. Receipt openings are stored privately on the device that ran
           distribute — without the salt, a slot cannot be claimed. This is the intended failure
           mode, not a bug.
@@ -96,9 +96,9 @@ export function EmployeePage() {
                 <Card className="flex items-center justify-between gap-4 text-sm">
                   <div>
                     <p>
-                      <span className="text-[var(--eclipse-ink-muted)]">Slot:</span> {r.slot}
+                      <span className="text-[var(--eclipse-ink-muted-on-surface)]">Slot:</span> {r.slot}
                     </p>
-                    <p className="font-mono text-xs break-all text-[var(--eclipse-ink-muted)]">
+                    <p className="font-mono text-xs break-all text-[var(--eclipse-ink-muted-on-surface)]">
                       {r.recipient || '—'}
                     </p>
                     {/* The amount is intentionally not displayed. */}

@@ -191,7 +191,7 @@ export function EmployerPage() {
             exit={{ opacity: 0, y: -8 }}
           >
             <Card className="space-y-4">
-              <label className="block text-sm text-[var(--eclipse-ink-muted)]">
+              <label className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
                 Deposit total (public)
                 <input
                   data-testid="deposit-input"
@@ -215,12 +215,12 @@ export function EmployerPage() {
             exit={{ opacity: 0, y: -8 }}
           >
             <Card className="space-y-4">
-              <p className="text-sm text-[var(--eclipse-ink-muted)]">
-                Private amounts for {activeRecipients.length} recipient(s). Sum must equal{' '}
-                {deposit}.
+              <p className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">
+                Private amounts for {activeRecipients.length} recipient(s). Sum must equal {deposit}
+                .
               </p>
               {activeRecipients.map((_, i) => (
-                <label key={i} className="block text-sm text-[var(--eclipse-ink-muted)]">
+                <label key={i} className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
                   Private amount {i + 1}
                   <input
                     data-testid={`amount-${i}`}
@@ -285,13 +285,15 @@ function PublicPayrollCard({
   return (
     <Card testId="public-payroll" className="text-sm">
       <p>
-        <span className="text-[var(--eclipse-ink-muted)]">Status:</span> {payroll.status}
+        <span className="text-[var(--eclipse-ink-muted-on-surface)]">Status:</span> {payroll.status}
       </p>
       <p>
-        <span className="text-[var(--eclipse-ink-muted)]">Deposit total:</span>{' '}
+        <span className="text-[var(--eclipse-ink-muted-on-surface)]">Deposit total:</span>{' '}
         {payroll.depositTotal.toString()}
       </p>
-      <p className="mt-2 text-[var(--eclipse-ink-muted)]">Commitments (public, opaque)</p>
+      <p className="mt-2 text-[var(--eclipse-ink-muted-on-surface)]">
+        Commitments (public, opaque)
+      </p>
       <ul className="mt-1 space-y-1 font-mono text-xs break-all">
         {payroll.receiptCommitments
           .filter((c) => c.replace(/0/g, '') !== '')
