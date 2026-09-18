@@ -99,7 +99,8 @@ Stating these up front, because a proposal that hides them is not a scoped propo
 - ✅ Recipient flow: `claim` circuit proving "I am owed my committed amount" without stating the
   amount — done, with receipt openings held in local private storage
 - ✅ CI/CD: typecheck + test + build on every push, badge in README — done, green
-- ✅ Test suite well above the 3-test minimum — 33 passing (10 contract, 17 SDK, 6 web privacy)
+- ✅ Test suite well above the 3-test minimum — 43 passing (10 contract, 17 SDK, 16 web — 6 privacy,
+  10 UI primitives)
 - ✅ Full README privacy-model section — done
 - Employer flow: real FungibleToken transfer-in replacing the L1 stub
 - Redeploy to Preprod carrying the `claim` circuit
@@ -125,7 +126,7 @@ Levels 1 and 2 are complete, which is the evidence that this scope is real rathe
 | Gate 0 — sum-proof spike | Done — the payroll invariant compiled and tested before any UI work began |
 | Level 1 — New Moon | Filed 2026-07-20 — Preprod deploy, `managed/`, README, evidence |
 | Level 2 — Waxing Crescent | Code-complete — Lace connect/disconnect, circuit from frontend, dual-view privacy demo, live demo, video |
-| Level 3 — First Quarter | In progress — `claim` circuit, CI, and 33 tests landed; this proposal |
+| Level 3 — First Quarter | In progress — `claim` circuit, CI, and 43 tests landed; this proposal |
 
 Eclipse did not ship a throwaway counter contract for Level 1. The sum-proof circuit that carries
 the entire privacy claim was the first thing built, deliberately, so that the hard part was proven
