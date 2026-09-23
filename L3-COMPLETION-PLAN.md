@@ -15,7 +15,10 @@
 > - 46 tests (13 contract, 17 SDK, 16 web); docs, screenshot and the Remotion video are updated.
 > - **Open:** Phase 4 (you: redeploy + `npm run lifecycle`), Phase 4b steps 2–3 (live capture), Phase 5
 >   (filing). Also still to do: open a PR to `main` for a CI run (CI only runs on `main` and PRs).
-> - Known and older than this work: the Remotion caption overlaps the bottom of the Scene 2 amounts row.
+> - **Hardening pass (merged PR #1, then this branch):** 53 tests (20 contract: edge cases + ledger
+>   privacy), CI `circuit-drift` job (recompile with compactc 0.31.1, fail on `managed/` diff) and
+>   `npm run check:privacy`, a real screen-capture demo `docs/evidence/l3-demo-app.mp4` (in-memory,
+>   labelled; script `l3-demo-app.record.mjs`), and the Remotion caption overlap is fixed.
 
 ## Context
 Level 3 is about 80% done: CI, 43 tests, the `claim` circuit, the proposal draft, and the demo video are all in place. Five things are still missing:
