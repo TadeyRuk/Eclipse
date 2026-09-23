@@ -99,13 +99,13 @@ Stating these up front, because a proposal that hides them is not a scoped propo
 - ✅ Recipient flow: `claim` circuit proving "I am owed my committed amount" without stating the
   amount — done, with receipt openings held in local private storage
 - ✅ CI/CD: typecheck + test + build on every push, badge in README — done, green
-- ✅ Test suite well above the 3-test minimum — 46 passing (13 contract, 17 SDK, 16 web — 6 privacy,
+- ✅ Test suite well above the 3-test minimum — 53 passing (20 contract, 17 SDK, 16 web — 6 privacy,
   10 UI primitives)
 - ✅ Full README privacy-model section — done
 - ✅ Employer flow: real tNIGHT transfer-in replacing the L1 stub — done; `fund` requires an
   unshielded native-token deposit of exactly the amount (the total was already public). Private
   pay-out to recipients (shielded coins) is Level 4 scope
-- ✅ One-minute demo video — done (illustrated walkthrough)
+- ✅ One-minute demo video — done (screen capture of the real app running the full flow)
 - Redeploy to Preprod carrying the `claim` circuit and the real `fund`
 
 **Explicitly not in scope** (from [boundaries.md](boundaries.md), which predates this proposal):
@@ -128,7 +128,7 @@ Levels 1 and 2 are complete, which is the evidence that this scope is real rathe
 | Gate 0 — sum-proof spike | Done — the payroll invariant compiled and tested before any UI work began |
 | Level 1 — New Moon | Filed 2026-07-20 — Preprod deploy, `managed/`, README, evidence |
 | Level 2 — Waxing Crescent | Code-complete — Lace connect/disconnect, circuit from frontend, dual-view privacy demo, live demo, video |
-| Level 3 — First Quarter | In progress — `claim` circuit, real tNIGHT `fund`, CI, and 46 tests landed; this proposal |
+| Level 3 — First Quarter | In progress — `claim` circuit, real tNIGHT `fund`, CI, and 53 tests landed; this proposal |
 
 Eclipse did not ship a throwaway counter contract for Level 1. The sum-proof circuit that carries
 the entire privacy claim was the first thing built, deliberately, so that the hard part was proven
