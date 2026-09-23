@@ -4,19 +4,18 @@
 > `fund`, the redeploy, or filing — it explains *why*, not just *what*. Once Level 3 is filed, fold any
 > lasting decisions into `docs/submission.md` / `docs/boundaries.md` and this file can be deleted.
 >
-> **Handoff note:** this session was blocked on Phase 0 — the container's network policy returned 403 on
-> `api.github.com`, so the Compact compiler (0.31.1) couldn't be fetched to recompile `contracts/managed/`.
-> The user was walking through fixing the environment's Network access setting (Update cloud environment →
-> Network access → Full network access or Custom with `github.com`, `api.github.com`,
-> `objects.githubusercontent.com`, `release-assets.githubusercontent.com`). **First step in a new session:
-> re-check `curl -sS -o /dev/null -w "%{http_code}\n" https://api.github.com/repos/midnightntwrk/compact/releases`.**
-> If it now returns 200, proceed with Phase 0 step 4 and Phase 1. If still 403, fall back to the Plan B
-> noted in Phase 1 (push the `.compact` + test changes, ask the user to run `npm run compile` locally and
-> commit `managed/`).
->
-> Status of docs already pushed to `claude/level-3-completion-94tkor`: README.md and docs/submission.md
-> status tables/Gantt updated to mark L3 "In progress" and the demo video done. Nothing else in this plan
-> has been executed yet — Phases 1–5 below are all still open.
+> **Handoff note (2026-09-23, second session):** Phases 0–3 and Phase 4b step 1 are **done** and
+> pushed to `claude/level-3-completion-94tkor`. The api.github.com 403 was repo scoping, not the
+> network policy: compactc 0.31.1 downloads fine from
+> `github.com/midnightntwrk/compact/releases/download/compactc-v0.31.1/compactc_v0.31.1_x86_64-unknown-linux-musl.zip`.
+> Recompiling reproduced `managed/` byte-for-byte before the change.
+> - `fund` calls `receiveUnshielded(nativeToken(), disclose(amount))`; only fund's artifacts changed.
+> - No transport change needed: Lace `balanceUnsealedTransaction` and testkit
+>   `balanceUnboundTransaction` (tokenKindsToBalance defaults to `all`) both balance unshielded inputs.
+> - 46 tests (13 contract, 17 SDK, 16 web); docs, screenshot and the Remotion video are updated.
+> - **Open:** Phase 4 (you: redeploy + `npm run lifecycle`), Phase 4b steps 2–3 (live capture), Phase 5
+>   (filing). Also still to do: open a PR to `main` for a CI run (CI only runs on `main` and PRs).
+> - Known and older than this work: the Remotion caption overlaps the bottom of the Scene 2 amounts row.
 
 ## Context
 Level 3 is about 80% done: CI, 43 tests, the `claim` circuit, the proposal draft, and the demo video are all in place. Five things are still missing:
