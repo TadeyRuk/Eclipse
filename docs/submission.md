@@ -36,7 +36,7 @@ README.md → judge-facing surface
 | Level 1 — New Moon | **Filed** (Rise In, 2026-07-20) | Preprod `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`; evidence in `docs/evidence/`; tag `level-1` |
 | Level 2 — Waxing Crescent | **Ready to file** | Lace + dual-view UI + SDK adapters + privacy tests + Netlify config; evidence `l2-*.png`; storyboard `docs/evidence/l2-demo-storyboard.md` |
 | Gate 3 — idea #6 approval | **Proposal drafted** | [proposal.md](proposal.md) — awaiting submission to committee |
-| Level 3 — First Quarter | Planned | Full flow, CI, idea #6 approval, 1-min demo |
+| Level 3 — First Quarter | **In progress** | Done: CI + badge, 43 tests, `claim` circuit, proposal draft, 1-min demo (illustrated). Remaining: real tNIGHT `fund`, redeploy, filing |
 
 Progress chart: root [README.md](../README.md#progress-gantt).
 

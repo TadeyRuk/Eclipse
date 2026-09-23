@@ -83,7 +83,7 @@ gantt
     CI pipeline and badge             :done,    l3a, 2026-07-26, 1d
     Product proposal idea 6           :done,    l3b, 2026-07-26, 1d
     FungibleToken fund and claim      :active,  l3c, 2026-07-27, 3d
-    One minute demo video             :         l3d, 2026-07-30, 1d
+    One minute demo video             :done,    l3d, 2026-07-30, 1d
     File Level3 on Rise In            :crit,    l3e, 2026-07-31, 1d
 ```
 
@@ -92,7 +92,7 @@ gantt
 | Gate 0 — sum-proof spike | **Done** |
 | Level 1 — New Moon | **Filed** (Rise In) |
 | Level 2 — Waxing Crescent (Lace + dual-view) | **Ready to file** (Rise In) |
-| Level 3 — First Quarter (full dApp + CI) | Planned |
+| Level 3 — First Quarter (full dApp + CI) | **In progress** — CI, 43 tests, `claim`, proposal draft, demo video done |
 
 Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level filing playbooks: [docs/submission.md](docs/submission.md).
 
