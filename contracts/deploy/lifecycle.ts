@@ -1,6 +1,7 @@
 /**
- * Run createPayroll → fund → distribute against an already-deployed Preprod/Preview contract.
- * Uses the same seed wallet + Midnight.js providers as deploy.ts — proves real on-chain circuits.
+ * Run createPayroll → fund → distribute → claim against an already-deployed Preprod/Preview
+ * contract. Uses the same seed wallet + Midnight.js providers as deploy.ts — proves real on-chain
+ * circuits. fund deposits real tNIGHT: the wallet balances the contract's unshielded input.
  *
  * Usage:
  *   MIDNIGHT_NETWORK=preprod npm run lifecycle -w @eclipse/contracts
@@ -189,11 +190,17 @@ async function main(): Promise<void> {
   const fundTx = await found.callTx.fund(deposit);
   logger.info(`fund txId=${fundTx.public.txId}`);
 
+  const recipients = recipientsOne();
   const amounts = [deposit, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
   const salts = saltsEight();
   logger.info('Calling distribute…');
   const distTx = await found.callTx.distribute(amounts, salts);
   logger.info(`distribute txId=${distTx.public.txId}`);
+
+  // Slot 0 opens its commitment; amount and salt stay private witnesses.
+  logger.info('Calling claim (slot 0)…');
+  const claimTx = await found.callTx.claim(0n, deposit, recipients[0]!, salts[0]!);
+  logger.info(`claim txId=${claimTx.public.txId}`);
 
   const afterStates = await getPublicStates(providers.publicDataProvider, contractAddress);
   const after = ledger(afterStates.contractState.data);
@@ -209,11 +216,13 @@ async function main(): Promise<void> {
     createTxId: createTx.public.txId,
     fundTxId: fundTx.public.txId,
     distributeTxId: distTx.public.txId,
+    claimTxId: claimTx.public.txId,
     status: STATUS[after.status] ?? String(after.status),
     depositTotal: after.depositTotal.toString(),
+    claimed: Array.from(after.claimed),
   };
-  writeFileSync(resolve(evidenceDir, 'l2-onchain-lifecycle.json'), JSON.stringify(out, null, 2));
-  console.log('\nECLIPSE_L2_ONCHAIN_OK');
+  writeFileSync(resolve(evidenceDir, 'l3-onchain-lifecycle.json'), JSON.stringify(out, null, 2));
+  console.log('\nECLIPSE_L3_ONCHAIN_OK');
   console.log(JSON.stringify(out, null, 2));
 
   await wallet.stop();
