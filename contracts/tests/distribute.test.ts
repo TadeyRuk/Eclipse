@@ -96,6 +96,63 @@ describe('distribute sum-proof', () => {
   });
 });
 
+describe('distribute edge cases', () => {
+  it('distribute_rejects_when_sum_below_total', () => {
+    const { contract, circuitCtx } = freshContract();
+    const fundedCtx = createThenFund(contract, circuitCtx, 100n);
+    const amounts = [99n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
+    expect(() => contract.impureCircuits.distribute(fundedCtx, amounts, eightSalts())).toThrow(
+      /sum\(amounts\) must equal depositTotal/,
+    );
+  });
+
+  it('distribute_rejects_amount_on_unused_slot', () => {
+    // Slot 1 has no recipient. Even though 60 + 40 equals the deposit, parking
+    // value on an empty slot would strand funds, so padding must be zero.
+    const { contract, circuitCtx } = freshContract();
+    const fundedCtx = createThenFund(contract, circuitCtx, 100n);
+    const amounts = [60n, 40n, 0n, 0n, 0n, 0n, 0n, 0n];
+    expect(() => contract.impureCircuits.distribute(fundedCtx, amounts, eightSalts())).toThrow(
+      /nonzero amount on unused recipient slot/,
+    );
+  });
+});
+
+describe('public ledger never holds an amount', () => {
+  function distributeWith(salts: Uint8Array[]) {
+    const { contract, circuitCtx } = freshContract();
+    const fundedCtx = createThenFund(contract, circuitCtx, 100n);
+    const { context } = contract.impureCircuits.distribute(
+      fundedCtx,
+      [100n, 0n, 0n, 0n, 0n, 0n, 0n, 0n],
+      salts,
+    );
+    return ledger(context.currentQueryContext.state);
+  }
+
+  it('ledger_exposes_only_documented_public_fields', () => {
+    // docs/privacy-model.md lists exactly these public fields. A new field would
+    // be a new public fact, so it must fail here until it is documented.
+    const after = distributeWith(eightSalts());
+    expect(Object.keys(after).sort()).toEqual(
+      ['claimed', 'depositTotal', 'employer', 'receiptCommitments', 'recipients', 'status'].sort(),
+    );
+  });
+
+  it('commitments_are_salted_so_equal_amounts_do_not_match', () => {
+    // Same payroll, different salts: commitments differ, so an observer cannot
+    // link or guess amounts by hashing candidate values.
+    const other = eightSalts().map((s) => {
+      const t = new Uint8Array(s);
+      t[31] = 0xff;
+      return t;
+    });
+    const a = distributeWith(eightSalts()).receiptCommitments[0]!;
+    const b = distributeWith(other).receiptCommitments[0]!;
+    expect(Buffer.from(a).equals(Buffer.from(b))).toBe(false);
+  });
+});
+
 describe('fund', () => {
   // The native token (tNIGHT on Preprod) is the all-zero unshielded token type.
   const NATIVE_TOKEN_RAW = '0'.repeat(64);
@@ -272,5 +329,32 @@ describe('claim', () => {
     expect(() =>
       contract.impureCircuits.claim(fundedCtx, 0n, AMOUNT, recipient, eightSalts()[0]!),
     ).toThrow(/claim requires Distributed status/);
+  });
+
+  it('claim_rejects_wrong_salt', () => {
+    const { contract, context } = distributedContract();
+    const recipient = recipientsWithOneActive()[0]!;
+    const wrongSalt = new Uint8Array(32).fill(9);
+    expect(() => contract.impureCircuits.claim(context, 0n, AMOUNT, recipient, wrongSalt)).toThrow(
+      /commitment mismatch for slot/,
+    );
+  });
+
+  it('claim_rejects_impostor_key', () => {
+    // Someone who learns the amount and salt still cannot claim with their own key:
+    // the key is bound into the commitment.
+    const { contract, context, salts } = distributedContract();
+    const impostor = new Uint8Array(32).fill(0x55);
+    expect(() => contract.impureCircuits.claim(context, 0n, AMOUNT, impostor, salts[0]!)).toThrow(
+      /commitment mismatch for slot/,
+    );
+  });
+
+  it('claim_rejects_slot_out_of_range', () => {
+    const { contract, context, salts } = distributedContract();
+    const recipient = recipientsWithOneActive()[0]!;
+    expect(() => contract.impureCircuits.claim(context, 8n, AMOUNT, recipient, salts[0]!)).toThrow(
+      /slot out of range/,
+    );
   });
 });
