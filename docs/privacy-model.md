@@ -30,7 +30,7 @@ Every public fact maps to a **ledger field or return**, not to `disclose()` alon
 | Circuit | Public surface | Justification |
 |---|---|---|
 | `createPayroll` | Ledger: `employer`, `recipients`, `status = Created` | Recipients must be publicly bindable to commitments; employer accountability |
-| `fund` (stub at L1) | Ledger: `depositTotal`, `status = Funded` | Public anchor the sum-proof binds against (L1 stub; post-L1 also inherent to token transfer) |
+| `fund` | Ledger: `depositTotal`, `status = Funded`; tx: unshielded input of `amount` native token (`receiveUnshielded`) | Public anchor the sum-proof binds against. Since L3 the deposit is a real unshielded tNIGHT transfer, so the amount (and the depositing wallet's unshielded inputs) is visible in the transaction too — no new fact beyond `depositTotal` (L1 was a stub write) |
 | `distribute` | Ledger: `status = Distributed` | Core public claim — books provably balanced (no separate boolean field) |
 | `distribute` | Ledger: `receiptCommitments` | Opaque hashes; enable recipient claims later; reveal nothing without opening |
 | `claim` | Ledger: `claimed[slot] = true` | Prevents double-claiming; proves “I am owed my committed amount” by re-deriving the commitment from private `amount` + `salt`. The amount is never written |

@@ -96,6 +96,47 @@ describe('distribute sum-proof', () => {
   });
 });
 
+describe('fund', () => {
+  // The native token (tNIGHT on Preprod) is the all-zero unshielded token type.
+  const NATIVE_TOKEN_RAW = '0'.repeat(64);
+
+  function unshieldedInputs(ctx: CircuitContext<null>): Array<[string, string, bigint]> {
+    return [...ctx.currentQueryContext.effects.unshieldedInputs.entries()].map(
+      ([token, amount]) => [token.tag, 'raw' in token ? token.raw : '', amount],
+    );
+  }
+
+  it('fund_requires_unshielded_native_deposit_of_amount', () => {
+    const { contract, circuitCtx } = freshContract();
+    let ctx = circuitCtx;
+    ({ context: ctx } = contract.impureCircuits.createPayroll(
+      ctx,
+      employerPk(),
+      recipientsWithOneActive(),
+    ));
+    expect(unshieldedInputs(ctx)).toEqual([]);
+
+    ({ context: ctx } = contract.impureCircuits.fund(ctx, 250n));
+    expect(unshieldedInputs(ctx)).toEqual([['unshielded', NATIVE_TOKEN_RAW, 250n]]);
+    expect(ledger(ctx.currentQueryContext.state).depositTotal).toBe(250n);
+  });
+
+  it('fund_rejects_before_create', () => {
+    const { contract, circuitCtx } = freshContract();
+    expect(() => contract.impureCircuits.fund(circuitCtx, 10n)).toThrow(
+      /fund requires Created status/,
+    );
+  });
+
+  it('fund_rejects_when_already_funded', () => {
+    const { contract, circuitCtx } = freshContract();
+    const fundedCtx = createThenFund(contract, circuitCtx, 10n);
+    expect(() => contract.impureCircuits.fund(fundedCtx, 10n)).toThrow(
+      /fund requires Created status/,
+    );
+  });
+});
+
 describe('lifecycle', () => {
   it('create_then_fund_then_distribute_succeeds', () => {
     const { contract, circuitCtx } = freshContract();

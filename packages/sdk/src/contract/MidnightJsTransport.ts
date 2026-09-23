@@ -3,6 +3,8 @@
  * for on-chain callTx (alongside deploy tooling under contracts/).
  *
  * Lace ConnectedAPI balances + submits; local proof-server proves via httpClientProofProvider.
+ * Balancing also covers fund's unshielded tNIGHT input: Lace adds the native-token
+ * inputs that the contract's receiveUnshielded expects.
  * ZK artifacts are fetched from zkAssetBaseUrl (e.g. /zk/eclipse).
  */
 import { findDeployedContract, getPublicStates } from '@midnight-ntwrk/midnight-js-contracts';

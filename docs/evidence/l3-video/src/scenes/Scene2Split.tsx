@@ -58,19 +58,33 @@ export const Scene2Split: React.FC = () => {
           <div style={{ fontSize: 18, color: colors.muted, marginBottom: 6 }}>
             Deposit total (public)
           </div>
-          <div
-            style={{
-              fontFamily: "monospace",
-              fontSize: 24,
-              color: colors.accent,
-              border: `1px solid ${colors.line}`,
-              borderRadius: 6,
-              padding: "7px 12px",
-              backgroundColor: colors.bg1,
-              width: "fit-content",
-            }}
-          >
-            1000
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              style={{
+                fontFamily: "monospace",
+                fontSize: 24,
+                color: colors.accent,
+                border: `1px solid ${colors.line}`,
+                borderRadius: 6,
+                padding: "7px 12px",
+                backgroundColor: colors.bg1,
+                width: "fit-content",
+              }}
+            >
+              1000 tNIGHT
+            </div>
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 600,
+                color: colors.bg1,
+                backgroundColor: colors.accent,
+                borderRadius: 999,
+                padding: "8px 20px",
+              }}
+            >
+              Deposit tNIGHT
+            </div>
           </div>
         </div>
       ) : null}
@@ -104,8 +118,8 @@ export const Scene2Split: React.FC = () => {
       ) : null}
 
       <Caption>
-        Three recipients (N≥3 — below that, the split is inferable). Fund a public deposit,
-        then enter private amounts summing to it.
+        Three recipients (N≥3 — below that, the split is inferable). Deposit real tNIGHT —
+        the total is public — then enter private amounts summing to it.
       </Caption>
     </BrowserFrame>
   );
