@@ -1,4 +1,4 @@
-// Eclipse — createPayroll + stub fund + distribute + claim
+// Eclipse — createPayroll + fund (unshielded tNIGHT deposit) + distribute + claim
 // Spec: docs/architecture.md §3.2
 // Public surface: docs/privacy-model.md (ledger writes only; disclose at write points)
 
@@ -112,9 +112,14 @@ export circuit createPayroll(
   status = Status.Created;
 }
 
-// Stub fund: public depositTotal only (no FungibleToken)
+// The employer deposits `amount` of the native token (tNIGHT on Preprod) into
+// the contract as an unshielded input: the transaction only balances if the
+// wallet actually moves that much. The deposit total was already public, so
+// nothing new is disclosed. Shielded pay-out is deferred to Level 4.
+// Disclosure row: docs/privacy-model.md.
 export circuit fund(amount: Uint<64>): [] {
   assertCreated();
+  receiveUnshielded(nativeToken(), disclose(amount));
   depositTotal = disclose(amount);
   status = Status.Funded;
 }
