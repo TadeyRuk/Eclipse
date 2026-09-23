@@ -36,7 +36,7 @@ README.md → judge-facing surface
 | Level 1 — New Moon | **Filed** (Rise In, 2026-07-20) | Preprod `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`; evidence in `docs/evidence/`; tag `level-1` |
 | Level 2 — Waxing Crescent | **Ready to file** | Lace + dual-view UI + SDK adapters + privacy tests + Netlify config; evidence `l2-*.png`; storyboard `docs/evidence/l2-demo-storyboard.md` |
 | Gate 3 — idea #6 approval | **Proposal drafted** | [proposal.md](proposal.md) — awaiting submission to committee |
-| Level 3 — First Quarter | **In progress** | Done: CI + badge, 43 tests, `claim` circuit, proposal draft, 1-min demo (illustrated). Remaining: real tNIGHT `fund`, redeploy, filing |
+| Level 3 — First Quarter | **In progress** | Done: CI + badge, 46 tests, `claim` circuit, real unshielded tNIGHT `fund`, proposal draft, 1-min demo (illustrated). Remaining: Preprod redeploy + live lifecycle run, filing |
 
 Progress chart: root [README.md](../README.md#progress-gantt).
 
@@ -64,10 +64,25 @@ Progress chart: root [README.md](../README.md#progress-gantt).
   sync wedges on long Preprod confirmations (watchdog in `contracts/deploy/run-lifecycle-watchdog.sh`
   restarts it). This is a *strengthening* goal, not an L2 pass condition — L2 requires a circuit
   called from the frontend (done, `VITE_USE_CHAIN=1` path) and a verifiable Preprod address (done).
-  L3's full-flow requirement is where this evidence belongs; it will write
-  `docs/evidence/l2-onchain-lifecycle.json`.
+  L3's full-flow requirement is where this evidence belongs; since L3 the script runs
+  create→fund→distribute→claim and writes `docs/evidence/l3-onchain-lifecycle.json`.
 - On-chain status as of 2026-07-26: contract `3aec836e…` decodes to `status=Uninitialized`,
   `depositTotal=0` — no lifecycle tx has landed, so the address is still valid for a future run
+
+### Level 3 filing record
+
+Not filed yet. Only facts that are true today:
+
+- CI: `.github/workflows/ci.yml` (typecheck → test → build) + README badge
+- Tests: 46 passing (13 contract, 17 SDK, 16 web); screenshot `docs/evidence/l3-tests.png`
+- `claim` circuit: entitlement proof + double-claim guard; amount stays a private witness
+- `fund`: real unshielded tNIGHT deposit via `receiveUnshielded(nativeToken(), amount)`; shielded
+  pay-out deferred to L4 ([boundaries.md](boundaries.md) decision log, 2026-09-23)
+- Proposal: [proposal.md](proposal.md), drafted, not yet submitted
+- Demo: `docs/evidence/l3-demo.mp4` (illustrated walkthrough, not a screen capture)
+- **Pending:** Preprod redeploy with four circuits (the current `3aec836e…` predates `claim` and the
+  real `fund`), `npm run lifecycle` → `docs/evidence/l3-onchain-lifecycle.json`, tag `level-3`,
+  Rise In filing
 
 ---
 
