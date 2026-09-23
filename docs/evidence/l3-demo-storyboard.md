@@ -13,7 +13,7 @@ Keep two browser tabs open side by side — the split screen *is* the privacy ar
 | Beat | Time | Screen | What to show |
 |---|---|---|---|
 | 1 · Connect | 0:00–0:08 | `/employer` | Click **Connect Lace**, unlock on Preprod. Address appears in the shell. |
-| 2 · Private split | 0:08–0:22 | Employer wizard | Add 3 recipients (N≥3 — below that the split is inferable from the public total). Fund a public deposit, then enter private amounts summing to it. |
+| 2 · Private split | 0:08–0:22 | Employer wizard | Add 3 recipients (N≥3 — below that the split is inferable from the public total). Click **Deposit tNIGHT**: on the live chain path Lace shows a signing prompt that moves real tNIGHT into the contract — keep that prompt on camera, it proves the transfer is real. Then enter private amounts summing to the public deposit. |
 | 3 · Distribute | 0:22–0:34 | Employer success | **Prove & distribute** → status `Distributed`, opaque commitments listed, amount inputs gone from the form. |
 | 4 · Observer | 0:34–0:44 | `/observer` | Public ledger only: status, deposit total, recipient addresses, commitments, claimed flags all `—`. Say plainly: no per-recipient amount exists anywhere in this view. |
 | 5 · Claim | 0:44–0:56 | `/employee` | Click **Claim** on a slot. It succeeds — and the amount is never displayed. This is the beat the L2 video could not show. |
