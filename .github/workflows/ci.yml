@@ -39,3 +39,35 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Privacy model covers every public field and circuit
+        run: npm run check:privacy
+
+  circuit-drift:
+    name: compiled circuit matches source
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Recompile with the pinned compiler and fail if the committed `managed/`
+      # (circuit JS, prover/verifier keys, zkir) differs from what the source produces.
+      # Proves the artifacts CI tests and the app serves are exactly this source.
+      - name: Install Compact compiler 0.31.1
+        run: |
+          curl -fsSL -o compactc.zip \
+            https://github.com/midnightntwrk/compact/releases/download/compactc-v0.31.1/compactc_v0.31.1_x86_64-unknown-linux-musl.zip
+          mkdir -p "$RUNNER_TEMP/compactc"
+          unzip -q compactc.zip -d "$RUNNER_TEMP/compactc"
+          rm compactc.zip
+          echo "$RUNNER_TEMP/compactc" >> "$GITHUB_PATH"
+
+      - name: Recompile contract
+        working-directory: contracts
+        run: |
+          compactc --version
+          compactc src/eclipse.compact managed/eclipse
+
+      - name: Fail on drift
+        run: git diff --exit-code --stat -- contracts/managed

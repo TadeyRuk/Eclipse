@@ -250,9 +250,17 @@ npm test
 
 ### CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs typecheck → test → build on every push
-and pull request to `main`. `contracts/managed/` (compiled circuit, keys, zkir) is committed, so CI
-needs neither the Compact compiler nor a proof server, and never touches the network.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and pull request to
+`main`, as two jobs:
+
+- **typecheck · test · build**, then `npm run check:privacy`: every `export ledger` field and every
+  `export circuit` in the contract must appear in [docs/privacy-model.md](docs/privacy-model.md), so
+  a new public fact cannot ship without a disclosure row.
+- **compiled circuit matches source**: installs the pinned Compact compiler (0.31.1), recompiles,
+  and fails if the committed `contracts/managed/` (circuit JS, prover/verifier keys, zkir) differs.
+  The artifacts the tests exercise and the app serves are provably this source.
+
+Because `managed/` is committed, the test job needs neither the compiler nor a proof server.
 
 ## Documentation
 
