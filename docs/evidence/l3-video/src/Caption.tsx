@@ -21,19 +21,19 @@ export const Caption: React.FC<{ children: React.ReactNode; delay?: number }> = 
     <div
       style={{
         position: "absolute",
-        bottom: 36,
+        bottom: 28,
         left: 48,
         right: 48,
         opacity,
         translate: `0px ${translateY}px`,
         fontFamily: fontStack,
-        fontSize: 30,
+        fontSize: 27,
         lineHeight: 1.4,
         color: colors.fg,
         backgroundColor: "rgba(20,32,26,0.92)",
         border: `1px solid ${colors.line}`,
         borderRadius: 10,
-        padding: "18px 26px",
+        padding: "14px 24px",
       }}
     >
       {children}
