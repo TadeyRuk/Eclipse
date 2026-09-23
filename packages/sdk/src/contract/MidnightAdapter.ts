@@ -106,6 +106,7 @@ export class InMemoryEclipseTransport implements EclipseCircuitTransport {
     return this.queryPublicPayroll();
   }
 
+  /** Mock deposit: records depositTotal only — no tokens move off-chain. */
   async fund(amount: bigint): Promise<Payroll> {
     if (this.payroll.status !== 'Created') {
       throw Object.assign(new Error('fund requires Created'), { kind: 'CircuitRejected' });
