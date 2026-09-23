@@ -117,7 +117,7 @@ Rules:
 | Field | Type | Purpose |
 |---|---|---|
 | `employer` | address/PK | Who created this payroll instance |
-| `depositTotal` | Uint | Public pool size (stub-writable at L1; real token transfer post-L1) |
+| `depositTotal` | Uint | Public pool size (stub-writable at L1; since L3 set by a real unshielded tNIGHT deposit) |
 | `recipients` | ordered list / fixed slots (max 8) | Who is owed a payment (membership only, no amounts). Insertion order binds `amounts[i]` |
 | `receiptCommitments` | Map\<address, Bytes\> or Vector\[8\] | Per-recipient commitment — enables claim later; reveals nothing alone |
 | `status` | enum {Created, Funded, Distributed} | Lifecycle guard; `Distributed` is the public “balanced” signal |
@@ -139,7 +139,7 @@ Public data becomes public via **ledger writes** (and returns), not via `disclos
 | Circuit | Caller | Private witnesses | Ledger writes |
 |---|---|---|---|
 | `createPayroll(recipients)` | Employer | — | `employer`, `recipients`, `status = Created` |
-| `fund(amount)` | Employer | — | `depositTotal`, `status = Funded` (L1: stub set; post-L1: with FungibleToken transfer-in) |
+| `fund(amount)` | Employer | — | `depositTotal`, `status = Funded`; the tx must carry an unshielded `amount` of native token (`receiveUnshielded`) (L1: stub set) |
 | `distribute(amounts, salts)` | Employer | `amounts` Vector\[8\], `salts` Vector\[8\] | `receiptCommitments`, `status = Distributed` |
 | `claim()` | Recipient | recipient key / opening material | claim validity only (caller-scoped). **Post-L1** |
 
@@ -154,7 +154,8 @@ Public data becomes public via **ledger writes** (and returns), not via `disclos
 ### Token handling
 
 - **Gate 0 / L1:** stub `depositTotal` as a public Uint (no FungibleToken wiring required for the spike or L1 deploy).
-- **Post-L1:** employer deposits an existing Preprod test token (faucet-sourced). OpenZeppelin `FungibleToken.compact` conventions for transfer-in; Eclipse ledger tracks the pool. No minting inside Eclipse.
+- **Post-L1 (planned):** employer deposits an existing Preprod test token (faucet-sourced). OpenZeppelin `FungibleToken.compact` conventions for transfer-in; Eclipse ledger tracks the pool. No minting inside Eclipse.
+- **L3 (as built, 2026-09-23):** `fund(amount)` calls `receiveUnshielded(nativeToken(), amount)`, so the employer deposits **tNIGHT** (Preprod's native token, faucet-sourced) as an unshielded input. The wallet balances it (Lace `balanceUnsealedTransaction`; testkit `balanceUnboundTransaction`). The native token replaced a FungibleToken contract: no second contract, and the deposit total was already public, so it costs no privacy. `claim` proves entitlement and blocks a second claim on the same slot, but does **not** pay out: the deposit stays in the contract. Private pay-out (shielded coins) is Level 4.
 
 ### 3.1 Gate 0 circuit sketch
 

@@ -75,7 +75,7 @@ export function EmployerPage() {
       setError('CircuitRejected', 'Invalid deposit');
       return;
     }
-    setBusy('Funding (stub depositTotal)…');
+    setBusy('Depositing tNIGHT…');
     setError(null);
     const res = await getSdk().eclipse.fund(amount);
     setBusy(null);
@@ -200,8 +200,12 @@ export function EmployerPage() {
                   className="mt-1 w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-[var(--eclipse-ink)]"
                 />
               </label>
+              <p className="text-xs text-[var(--eclipse-ink-muted-on-surface)]">
+                Lace moves this much tNIGHT into the contract. The deposit total is public by
+                design; individual amounts stay private.
+              </p>
               <Button testId="fund-payroll" onClick={() => void runFund()}>
-                Stub fund
+                Deposit tNIGHT
               </Button>
             </Card>
           </motion.div>

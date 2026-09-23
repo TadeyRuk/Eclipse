@@ -14,17 +14,18 @@ ledger), a verifiable Preprod contract, live demo, and demo video. SDK adapters 
 `Result` boundary; privacy wipe tests cover the amount-clearing claim.
 
 Level 3 First Quarter **in progress** — CI/CD is green (typecheck → test → build on every push), the
-test suite stands at 43 across three workspaces, the `claim` circuit is live end to end (employee
-claims a slot without revealing its amount), the product proposal for idea #6 is drafted
-([docs/proposal.md](docs/proposal.md)), and a one-minute demo video is recorded (illustrated
-walkthrough — see note below). Remaining: real FungibleToken `fund` transfer-in, a redeploy carrying
-the `claim` circuit, and filing the proposal on Rise In for approval.
+test suite stands at 46 across three workspaces, the `claim` circuit is live end to end (employee
+claims a slot without revealing its amount), `fund` takes a real unshielded tNIGHT deposit (the
+transaction only balances if the wallet moves the tokens), the product proposal for idea #6 is
+drafted ([docs/proposal.md](docs/proposal.md)), and a one-minute demo video is recorded (illustrated
+walkthrough — see note below). Remaining: a Preprod redeploy carrying the new `fund` and `claim`
+circuits, and filing the proposal on Rise In for approval.
 
 Running create → fund → distribute yourself needs a local proof-server on `127.0.0.1:6300` — circuits
 prove locally by design, so this is inherent to Midnight, not a shortcut. Connect-only works on the
 hosted demo without one.
 
-**Last updated:** 2026-07-26 · Program window: 2026-06-29 → 2026-07-31
+**Last updated:** 2026-09-23 · Program window: 2026-06-29 → 2026-07-31
 
 ### Live demo
 
@@ -42,13 +43,14 @@ Connect-only works on the hosted site without a proof-server. Create → fund �
 | Preview | — | — |
 | Preprod | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) | `createPayroll`, `fund`, `distribute` |
 
-> **Note:** the deployed instance above predates the `claim` circuit — it carries the three L1/L2
-> circuits, and its ledger has no `claimed` vector. The repo now compiles four circuits, so
-> `claim` is exercised by the contract tests and the in-memory demo path, not yet by this address.
+> **Note:** the deployed instance above predates the `claim` circuit and the real tNIGHT `fund` —
+> it carries the three L1/L2 circuits with the old stub `fund`, and its ledger has no `claimed`
+> vector. The repo now compiles four circuits, so `claim` and the token deposit are exercised by
+> the contract tests and the in-memory demo path, not yet by this address.
 > A redeploy is pending: a cold Preprod dust sync runs ~2 hours and does not resume across
 > attempts, which is the honest reason it is not done yet rather than an oversight.
 
-**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 tests (43 passing)](docs/evidence/l3-tests.png) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md) · [L3 demo video](docs/evidence/l3-demo.mp4)
+**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 tests (46 passing)](docs/evidence/l3-tests.png) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md) · [L3 demo video](docs/evidence/l3-demo.mp4)
 
 > The L3 demo video is an **illustrated walkthrough** — a Remotion recreation of the six
 > storyboard beats (connect, private split, distribute, observer, claim, proof lands), not a
@@ -82,8 +84,9 @@ gantt
     section Level3_FirstQuarter
     CI pipeline and badge             :done,    l3a, 2026-07-26, 1d
     Product proposal idea 6           :done,    l3b, 2026-07-26, 1d
-    FungibleToken fund and claim      :active,  l3c, 2026-07-27, 3d
-    One minute demo video             :         l3d, 2026-07-30, 1d
+    tNIGHT fund and claim             :done,    l3c, 2026-07-27, 3d
+    Preprod redeploy with claim       :active,  l3f, 2026-09-23, 1d
+    One minute demo video             :done,    l3d, 2026-07-30, 1d
     File Level3 on Rise In            :crit,    l3e, 2026-07-31, 1d
 ```
 
@@ -92,7 +95,7 @@ gantt
 | Gate 0 — sum-proof spike | **Done** |
 | Level 1 — New Moon | **Filed** (Rise In) |
 | Level 2 — Waxing Crescent (Lace + dual-view) | **Ready to file** (Rise In) |
-| Level 3 — First Quarter (full dApp + CI) | Planned |
+| Level 3 — First Quarter (full dApp + CI) | **In progress** — CI, 46 tests, `claim`, tNIGHT `fund`, proposal draft, demo video done; redeploy pending |
 
 Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level filing playbooks: [docs/submission.md](docs/submission.md).
 
@@ -166,7 +169,7 @@ Judges on Netlify **cannot** use your laptop’s proof-server unless they run on
 docker run -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
 ```
 
-4. Open the live demo → Connect Lace → Employer create → stub fund → distribute (`VITE_USE_CHAIN=1` on Netlify)
+4. Open the live demo → Connect Lace → Employer create → deposit tNIGHT → distribute (`VITE_USE_CHAIN=1` on Netlify)
 5. Open `/observer`: public status + commitments; **no** private amounts
 
 Transport modes:
@@ -234,10 +237,11 @@ Full disclosure ledger and trust assumptions: [docs/privacy-model.md](docs/priva
 npm test
 ```
 
-43 tests across three workspaces:
+46 tests across three workspaces:
 
-- **contracts** — 10 tests: sum-proof, lifecycle ordering, and claim (valid opening, wrong amount
-  rejected, double-claim rejected, claim-before-distribute rejected)
+- **contracts** — 13 tests: sum-proof, fund (requires an unshielded native-token deposit of exactly
+  the amount; rejected before create or when already funded), lifecycle ordering, and claim (valid
+  opening, wrong amount rejected, double-claim rejected, claim-before-distribute rejected)
 - **@eclipse/sdk** — 17 tests: Result mapping, salts, ProofClient loopback, mock-port adapters,
   receipt-opening storage and the claim path
 - **@eclipse/web** — 16 tests: amount wipe after distribute, employee claims without rendering the
