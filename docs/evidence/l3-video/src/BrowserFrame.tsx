@@ -10,7 +10,8 @@ export const BrowserFrame: React.FC<{
       style={{
         backgroundColor: colors.bg0,
         fontFamily: fontStack,
-        padding: 48,
+        // Bottom strip holds the caption, outside the window, so it never covers the UI.
+        padding: "36px 48px 220px",
       }}
     >
       <div
@@ -57,12 +58,15 @@ export const BrowserFrame: React.FC<{
         <div
           style={{
             flex: 1,
+            // minHeight 0 keeps a tall scene from stretching past the window.
+            // Not positioned, so the absolute Caption anchors to the canvas instead.
+            minHeight: 0,
+            overflow: "hidden",
             backgroundColor: colors.bg0,
             color: colors.fg,
-            padding: "36px 56px 176px",
+            padding: "32px 56px",
             display: "flex",
             flexDirection: "column",
-            position: "relative",
           }}
         >
           {children}

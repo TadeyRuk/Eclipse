@@ -27,22 +27,29 @@ export const Scene2Split: React.FC = () => {
     <BrowserFrame url="eclipse-private-payroll.netlify.app/employer">
       <h1 style={{ fontSize: 40, margin: "0 0 16px", color: colors.fg }}>Employer</h1>
 
-      {showRecipients ? (
-        <div style={{ marginBottom: 18 }}>
+      {showRecipients && showAmounts ? (
+        // Like the app's wizard, earlier steps collapse once the amounts step opens.
+        <div style={{ fontSize: 18, color: colors.muted, marginBottom: 12 }}>
+          Recipients (public): {RECIPIENTS.length}
+        </div>
+      ) : null}
+
+      {showRecipients && !showAmounts ? (
+        <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 18, color: colors.muted, marginBottom: 6 }}>
             Recipients (public)
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {RECIPIENTS.map((r, i) => (
               <div
                 key={r}
                 style={{
                   fontFamily: "monospace",
-                  fontSize: 19,
+                  fontSize: 17,
                   color: colors.fg,
                   border: `1px solid ${colors.line}`,
                   borderRadius: 6,
-                  padding: "7px 12px",
+                  padding: "4px 12px",
                   backgroundColor: colors.bg1,
                 }}
               >
@@ -54,7 +61,7 @@ export const Scene2Split: React.FC = () => {
       ) : null}
 
       {showDeposit ? (
-        <div style={{ marginBottom: 18 }}>
+        <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 18, color: colors.muted, marginBottom: 6 }}>
             Deposit total (public)
           </div>
@@ -118,8 +125,7 @@ export const Scene2Split: React.FC = () => {
       ) : null}
 
       <Caption>
-        Three recipients (N≥3 — below that, the split is inferable). Deposit real tNIGHT —
-        the total is public — then enter private amounts summing to it.
+        Public recipients and a real tNIGHT deposit; then private amounts that sum to it.
       </Caption>
     </BrowserFrame>
   );

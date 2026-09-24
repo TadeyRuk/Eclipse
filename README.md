@@ -14,11 +14,11 @@ ledger), a verifiable Preprod contract, live demo, and demo video. SDK adapters 
 `Result` boundary; privacy wipe tests cover the amount-clearing claim.
 
 Level 3 First Quarter **in progress** — CI/CD is green (typecheck → test → build on every push), the
-test suite stands at 46 across three workspaces, the `claim` circuit is live end to end (employee
+test suite stands at 53 across three workspaces, the `claim` circuit is live end to end (employee
 claims a slot without revealing its amount), `fund` takes a real unshielded tNIGHT deposit (the
 transaction only balances if the wallet moves the tokens), the product proposal for idea #6 is
-drafted ([docs/proposal.md](docs/proposal.md)), and a one-minute demo video is recorded (illustrated
-walkthrough — see note below). Remaining: a Preprod redeploy carrying the new `fund` and `claim`
+drafted ([docs/proposal.md](docs/proposal.md)), and the demo video is a real screen capture of the
+app running the full flow (see note below). Remaining: a Preprod redeploy carrying the new `fund` and `claim`
 circuits, and filing the proposal on Rise In for approval.
 
 Running create → fund → distribute yourself needs a local proof-server on `127.0.0.1:6300` — circuits
@@ -50,13 +50,17 @@ Connect-only works on the hosted site without a proof-server. Create → fund �
 > A redeploy is pending: a cold Preprod dust sync runs ~2 hours and does not resume across
 > attempts, which is the honest reason it is not done yet rather than an oversight.
 
-**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 tests (46 passing)](docs/evidence/l3-tests.png) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md) · [L3 demo video](docs/evidence/l3-demo.mp4)
+**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 tests (53 passing)](docs/evidence/l3-tests.png) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md) · [**L3 demo video (app capture)**](docs/evidence/l3-demo-app.mp4) · [L3 illustrated walkthrough](docs/evidence/l3-demo.mp4)
 
-> The L3 demo video is an **illustrated walkthrough** — a Remotion recreation of the six
-> storyboard beats (connect, private split, distribute, observer, claim, proof lands), not a
-> screen capture of a live Preprod session. The L2 video above is a real capture with Lace
-> connected; this one narrates the same UI and lifecycle without requiring a live wallet signature
-> to reproduce. Every screen and value shown matches the actual app's components, copy, and theme.
+> **L3 demo video ([l3-demo-app.mp4](docs/evidence/l3-demo-app.mp4), 48 s)** is a real screen
+> capture of this app running the full flow: connect → three recipients → deposit tNIGHT → private
+> amounts → distribute → observer view → employee claim → observer shows slot 0 claimed, with no
+> amount visible anywhere. It runs in **in-memory mode** (`VITE_USE_CHAIN=0`) with a demo wallet
+> standing in for Lace, and says so in an on-screen banner: no Preprod transactions happen in it.
+> The recording is scripted and reproducible:
+> [`l3-demo-app.record.mjs`](docs/evidence/l3-demo-app.record.mjs).
+> [l3-demo.mp4](docs/evidence/l3-demo.mp4) is an illustrated Remotion walkthrough of the same six
+> beats. The L2 video is a real capture with Lace connected on Preprod.
 
 ### Progress (Gantt)
 
@@ -95,7 +99,7 @@ gantt
 | Gate 0 — sum-proof spike | **Done** |
 | Level 1 — New Moon | **Filed** (Rise In) |
 | Level 2 — Waxing Crescent (Lace + dual-view) | **Ready to file** (Rise In) |
-| Level 3 — First Quarter (full dApp + CI) | **In progress** — CI, 46 tests, `claim`, tNIGHT `fund`, proposal draft, demo video done; redeploy pending |
+| Level 3 — First Quarter (full dApp + CI) | **In progress** — CI (+ circuit drift and privacy-doc checks), 53 tests, `claim`, tNIGHT `fund`, proposal draft, app-capture demo video done; redeploy pending |
 
 Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level filing playbooks: [docs/submission.md](docs/submission.md).
 
@@ -237,11 +241,14 @@ Full disclosure ledger and trust assumptions: [docs/privacy-model.md](docs/priva
 npm test
 ```
 
-46 tests across three workspaces:
+53 tests across three workspaces:
 
-- **contracts** — 13 tests: sum-proof, fund (requires an unshielded native-token deposit of exactly
-  the amount; rejected before create or when already funded), lifecycle ordering, and claim (valid
-  opening, wrong amount rejected, double-claim rejected, claim-before-distribute rejected)
+- **contracts** — 20 tests: sum-proof (sum above or below the deposit rejected, value on an unused
+  slot rejected), fund (requires an unshielded native-token deposit of exactly the amount; rejected
+  before create or when already funded), lifecycle ordering, claim (valid opening; wrong amount,
+  wrong salt, impostor key, out-of-range slot, double claim and claim-before-distribute all
+  rejected), and ledger privacy (the ledger exposes exactly the documented public fields; salted
+  commitments differ for equal amounts)
 - **@eclipse/sdk** — 17 tests: Result mapping, salts, ProofClient loopback, mock-port adapters,
   receipt-opening storage and the claim path
 - **@eclipse/web** — 16 tests: amount wipe after distribute, employee claims without rendering the
@@ -250,9 +257,17 @@ npm test
 
 ### CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs typecheck → test → build on every push
-and pull request to `main`. `contracts/managed/` (compiled circuit, keys, zkir) is committed, so CI
-needs neither the Compact compiler nor a proof server, and never touches the network.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and pull request to
+`main`, as two jobs:
+
+- **typecheck · test · build**, then `npm run check:privacy`: every `export ledger` field and every
+  `export circuit` in the contract must appear in [docs/privacy-model.md](docs/privacy-model.md), so
+  a new public fact cannot ship without a disclosure row.
+- **compiled circuit matches source**: installs the pinned Compact compiler (0.31.1), recompiles,
+  and fails if the committed `contracts/managed/` (circuit JS, prover/verifier keys, zkir) differs.
+  The artifacts the tests exercise and the app serves are provably this source.
+
+Because `managed/` is committed, the test job needs neither the compiler nor a proof server.
 
 ## Documentation
 
