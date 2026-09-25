@@ -1,0 +1,20 @@
+{
+  "network": "preprod",
+  "contractAddress": "c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac",
+  "createTxId": "00e72a5008176699cee0b8fe0c3f32d46b5bbcc276cb1507239cde60679ada95e0",
+  "fundTxId": "0035a22bc7220843d95ab12b308c266061063d09261f0a869d021b8b04c52bd23a",
+  "distributeTxId": "00db3aaaacac1ca3548ef79fab6e95747369a4e16d1c001f1acf75d8f888080215",
+  "claimTxId": "00fbd669a6558bc60c9ad896c32b1ba5ee78245c5c56ca543c4db71df0bf49376b",
+  "status": "Distributed",
+  "depositTotal": "100",
+  "claimed": [
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ]
+}
