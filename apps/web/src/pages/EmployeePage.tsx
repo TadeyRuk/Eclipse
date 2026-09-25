@@ -1,3 +1,4 @@
+import { describeError } from '../lib/describeError';
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CircleCheck } from 'lucide-react';
@@ -50,7 +51,7 @@ export function EmployeePage() {
     const res = await getSdk().eclipse.claim(slot);
     setBusy(null);
     if (!res.ok) {
-      setError(res.error.kind, res.error.message);
+      setError(res.error.kind, describeError(res.error));
       return;
     }
     await refresh();

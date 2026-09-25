@@ -1,3 +1,4 @@
+import { describeError } from '../lib/describeError';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Wallet } from 'lucide-react';
@@ -22,7 +23,7 @@ export function ObserverPage() {
       const res = await getSdk().eclipse.getPublicPayroll();
       if (cancelled) return;
       if (!res.ok) {
-        setError(res.error.kind, res.error.message);
+        setError(res.error.kind, describeError(res.error));
         return;
       }
       setPayroll(res.value);

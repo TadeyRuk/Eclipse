@@ -21,6 +21,26 @@ function listWallets(): { id: string; api: InitialAPI }[] {
     .map(([id, api]) => ({ id, api }));
 }
 
+/**
+ * Wallets install under a UUID key (CAIP-372 draft), so the key says nothing about which wallet
+ * it is; `rdns` and `name` do. The key is still checked for older `mnLace`-style injections.
+ */
+function matchesWallet(w: { id: string; api: InitialAPI }, needle: string): boolean {
+  const n = needle.toLowerCase();
+  return [w.id, w.api.rdns, w.api.name].some((v) => typeof v === 'string' && v.toLowerCase().includes(n));
+}
+
+/** Extensions inject after page load; a click right after navigation can precede injection. */
+async function waitForWallets(timeoutMs: number): Promise<{ id: string; api: InitialAPI }[]> {
+  const started = Date.now();
+  let wallets = listWallets();
+  while (wallets.length === 0 && Date.now() - started < timeoutMs) {
+    await new Promise((r) => setTimeout(r, 200));
+    wallets = listWallets();
+  }
+  return wallets;
+}
+
 export class LaceAdapter implements WalletPort {
   private connectedApi: ConnectedAPI | null = null;
   private address: Address | null = null;
@@ -46,13 +66,13 @@ export class LaceAdapter implements WalletPort {
 
   async connect(): Promise<Result<WalletState>> {
     return safeAsync('WalletNotConnected', 'Lace connect failed', async () => {
-      const wallets = listWallets();
+      const wallets = await waitForWallets(3_000);
       if (wallets.length === 0) {
         throw new Error('No Midnight wallet found. Install Lace and unlock it on Preprod.');
       }
       const preferred =
-        wallets.find((w) => w.id.toLowerCase().includes(this.preferredWalletId.toLowerCase())) ??
-        wallets.find((w) => w.id.toLowerCase().includes('lace')) ??
+        wallets.find((w) => matchesWallet(w, this.preferredWalletId)) ??
+        wallets.find((w) => matchesWallet(w, 'lace')) ??
         wallets[0];
       if (!preferred) {
         throw new Error('No usable Midnight wallet API');

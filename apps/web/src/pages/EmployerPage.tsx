@@ -1,3 +1,4 @@
+import { describeError } from '../lib/describeError';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MAX_RECIPIENTS } from '@eclipse/sdk';
@@ -56,7 +57,7 @@ export function EmployerPage() {
     const res = await sdk.eclipse.createPayroll(recipients.map((r) => r.trim()).filter(Boolean));
     setBusy(null);
     if (!res.ok) {
-      setError(res.error.kind, res.error.message);
+      setError(res.error.kind, describeError(res.error));
       return;
     }
     setPayroll(res.value);
@@ -80,7 +81,7 @@ export function EmployerPage() {
     const res = await getSdk().eclipse.fund(amount);
     setBusy(null);
     if (!res.ok) {
-      setError(res.error.kind, res.error.message);
+      setError(res.error.kind, describeError(res.error));
       return;
     }
     setPayroll(res.value);
@@ -105,7 +106,7 @@ export function EmployerPage() {
     setProofHealthy(health.ok);
     if (!health.ok) {
       setBusy(null);
-      setError(health.error.kind, health.error.message);
+      setError(health.error.kind, describeError(health.error));
       return;
     }
 
@@ -114,7 +115,7 @@ export function EmployerPage() {
     const res = await getSdk().eclipse.distribute(parsed);
     setBusy(null);
     if (!res.ok) {
-      setError(res.error.kind, res.error.message);
+      setError(res.error.kind, describeError(res.error));
       return;
     }
     setPayroll(res.value);

@@ -1,3 +1,4 @@
+import { describeError } from '../lib/describeError';
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { chainModeEnabled, debugEnabled, getContractAddress, getSdk } from '../sdk';
@@ -25,7 +26,7 @@ export function Shell({ children }: { children: ReactNode }) {
     const sdk = getSdk();
     const res = await sdk.wallet.connect();
     if (!res.ok) {
-      setError(res.error.kind, res.error.message);
+      setError(res.error.kind, describeError(res.error));
       return;
     }
     setError(null);
