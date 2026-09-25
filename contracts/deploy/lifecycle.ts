@@ -157,6 +157,20 @@ async function withRetry<T>(
   fn: () => Promise<T>,
 ): Promise<T> {
   for (let attempt = 1; ; attempt++) {
+    // callTx has no timeout of its own; a heartbeat shows which wallet state a hung call waits on.
+    const started = Date.now();
+    const heartbeat = setInterval(() => {
+      latestState(wallet)
+        .then((s) =>
+          logger.info(
+            `[${label}] still running ${Math.round((Date.now() - started) / 1000)}s: ` +
+              `isSynced=${s.isSynced} dustCoins=${s.dust.availableCoins.length} ` +
+              `dustPending=${s.dust.pendingCoins?.length ?? '?'} ` +
+              `dustProgress=${JSON.stringify(s.dust.state.progress)}`,
+          ),
+        )
+        .catch((err: unknown) => logger.warn(`[${label}] heartbeat failed: ${String(err)}`));
+    }, 30_000);
     try {
       return await fn();
     } catch (err) {
@@ -164,6 +178,8 @@ async function withRetry<T>(
       logger.warn(`${label} failed (attempt ${attempt}/${TX_ATTEMPTS}), retrying: ${String(err)}`);
       await sleep(30_000 * attempt);
       await waitForSpendableDust(wallet, dustTimeoutMs);
+    } finally {
+      clearInterval(heartbeat);
     }
   }
 }

@@ -38,6 +38,9 @@ import {
   WalletFacade,
 } from '@midnight-ntwrk/wallet-sdk';
 
+/** Fee padding in DUST specks; negligible next to a single 25e18-speck generated coin. */
+const DUST_FEE_OVERHEAD = 1_000_000_000n;
+
 type Snapshot = {
   version: 1;
   networkId: string;
@@ -122,7 +125,10 @@ export async function buildResumableWallet(
     ...config,
     costParameters: {
       ledgerParams: DEFAULT_DUST_OPTIONS.ledgerParams,
-      additionalFeeOverhead: DEFAULT_DUST_OPTIONS.additionalFeeOverhead,
+      // Must be > 0. With initialParameters a small call tx (createPayroll) prices at exactly 0,
+      // and dust-wallet 4.2.0's computeBalancingRecipe then selects no coins and loops forever
+      // on a 1-speck fee it can never cover (observed 2026-09-26). Deploys price above 0.
+      additionalFeeOverhead: DUST_FEE_OVERHEAD,
       feeBlocksMargin: DEFAULT_DUST_OPTIONS.feeBlocksMargin,
     },
   };
