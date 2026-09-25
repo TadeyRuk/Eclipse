@@ -174,9 +174,9 @@ export async function waitForSpendableDust(
         `dustProg=${state.dust.state.progress.isStrictlyComplete()} ` +
         `dustProgress=${dustProg}`,
     );
-    // Spendable dust only after dust ledger has caught up enough to report balance.
-    if (dust > 0n && dustCoins > 0) return;
-    if (dust > 0n) return;
+    // Spendable dust only after wallet is fully synced to chain tip AND has spendable dust.
+    // Returning before isSynced causes InvalidDustSpendProof (error 170) on deployment.
+    if (state.isSynced && dust > 0n && dustCoins > 0) return;
     await sleep(10_000);
   }
   throw new Error(

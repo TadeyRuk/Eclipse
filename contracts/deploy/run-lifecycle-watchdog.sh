@@ -23,15 +23,18 @@ case "$TARGET" in
   *) echo "usage: $0 [lifecycle|deploy] [log-dir]" >&2; exit 2 ;;
 esac
 
-# During the dust wait the script logs every ~18s, so silence there is abnormal
-# fast. Past that, createPayroll/fund/distribute each cover
-# build+prove+sign+submit+confirm in one call with no intermediate logging, and a
-# real Preprod confirmation can exceed 10 minutes quietly — so a short threshold
-# would kill healthy runs (observed 2026-07-25). 900s clears both: far above the
-# 18s dust cadence, still under a legitimate confirmation wait.
+# During DUST sync testkit logs a status line every ~18s, even after the
+# WebSocket replay has wedged. The only real progress signal in that phase is
+# `dustProgress.appliedIndex`. Once deployment/proving starts, a transaction can
+# legitimately be quiet for several minutes, so preserve the output-based
+# watchdog there.
+#
+# `DUST_STALL_SECS` is separate so tests and recovery runs can shorten only the
+# sync threshold without making proof submission timing-sensitive.
+DUST_STALL_SECS="${DUST_STALL_SECS:-900}"
 STALL_SECS="${STALL_SECS:-900}"
-CHECK_INTERVAL=30
-MAX_ATTEMPTS="${MAX_ATTEMPTS:-4}"
+CHECK_INTERVAL="${CHECK_INTERVAL:-30}"
+ MAX_ATTEMPTS="${MAX_ATTEMPTS:-4}"
 
 attempt=0
 while [ "$attempt" -lt "$MAX_ATTEMPTS" ]; do
@@ -44,25 +47,40 @@ while [ "$attempt" -lt "$MAX_ATTEMPTS" ]; do
   child=$!
 
   last_lines=0
-  last_change=$(date +%s)
+  last_output_change=$(date +%s)
+  last_dust_index=''
+  last_dust_index_change=$last_output_change
 
   while kill -0 "$child" 2>/dev/null; do
     sleep "$CHECK_INTERVAL"
     now_lines=$(wc -l < "$LOG_FILE" 2>/dev/null || echo 0)
     now=$(date +%s)
-    # Any new log output counts as progress, not just dust-sync appliedIndex
-    # lines - once past the dust wait, createPayroll/fund/distribute log
-    # sparsely (a couple of lines around each proof+submit), so a naive
-    # appliedIndex-only check false-triggers during normal tx submission.
-    if [ "$now_lines" -gt "$last_lines" ]; then
-      last_lines="$now_lines"
-      last_change="$now"
-    elif [ $((now - last_change)) -ge "$STALL_SECS" ]; then
-      echo "[watchdog] no new log output for ${STALL_SECS}s+, killing and retrying"
+    current_dust_index=$(sed -nE 's/.*"appliedIndex":"([0-9]+)".*/\1/p' "$LOG_FILE" | tail -1)
+    circuit_phase=false
+    if grep -qE 'Deploying Eclipse contract to|Deploying a fresh Eclipse instance|Lifecycle contract=' "$LOG_FILE"; then
+      circuit_phase=true
+    fi
+
+    if [ "$circuit_phase" = false ] && [ -n "$current_dust_index" ]; then
+      if [ "$current_dust_index" != "$last_dust_index" ]; then
+        last_dust_index=$current_dust_index
+        last_dust_index_change=$now
+      elif [ $((now - last_dust_index_change)) -ge "$DUST_STALL_SECS" ]; then
+        echo "[watchdog] DUST appliedIndex stalled at ${current_dust_index} for ${DUST_STALL_SECS}s+, killing and retrying"
+        kill "$child" 2>/dev/null
+        wait "$child" 2>/dev/null
+        break
+      fi
+    elif [ "$now_lines" -gt "$last_lines" ]; then
+      last_lines=$now_lines
+      last_output_change=$now
+    elif [ $((now - last_output_change)) -ge "$STALL_SECS" ]; then
+      echo "[watchdog] no circuit-phase log output for ${STALL_SECS}s+, killing and retrying"
       kill "$child" 2>/dev/null
       wait "$child" 2>/dev/null
       break
     fi
+
     if grep -qE "$SUCCESS_PATTERN" "$LOG_FILE" 2>/dev/null; then
       echo "[watchdog] success detected"
       grep -E "$SUCCESS_PATTERN" "$LOG_FILE" | tail -3

@@ -5,6 +5,11 @@
  *
  * Usage:
  *   MIDNIGHT_NETWORK=preprod npm run lifecycle -w @eclipse/contracts
+ *
+ * LIFECYCLE_DEPLOY=1 deploys a fresh instance for this run instead of reading an address, and
+ * LIFECYCLE_SPARES=N also deploys N untouched instances for the Lace demo, written to
+ * docs/evidence/l3-demo-addresses-{network}.txt. Every instance is one payroll run, and a cold
+ * Preprod dust sync takes hours, so doing all deploys inside one sync saves a second sync.
  */
 import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -20,9 +25,11 @@ import {
 } from '@midnight-ntwrk/testkit-js';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import {
+  deployContract,
   findDeployedContract,
   getPublicStates,
   type ContractProviders,
+  type DeployContractOptions,
 } from '@midnight-ntwrk/midnight-js-contracts';
 
 import { getConfig } from './config.js';
@@ -108,8 +115,30 @@ function saltsEight(): Uint8Array[] {
   });
 }
 
+type Providers = ReturnType<typeof initializeMidnightProviders>;
+
+async function deployFresh(providers: Providers): Promise<string> {
+  logger.info('Deploying a fresh Eclipse instance…');
+  // Same casts as deploy.ts: testkit types circuit ids as `string`.
+  const deployed = await deployContract<EclipseContractType>(
+    providers as unknown as ContractProviders<EclipseContractType>,
+    {
+      compiledContract:
+        CompiledEclipseContract as unknown as DeployContractOptions<EclipseContractType>['compiledContract'],
+      privateStateId: PRIVATE_STATE_ID,
+      initialPrivateState: {},
+    },
+  );
+  const address = deployed.deployTxData.public.contractAddress;
+  logger.info(`Contract deployed at: ${address}`);
+  return address;
+}
+
 /** Wait until unshielded NIGHT is visible — needed before dust registration. */
-async function waitForNight(timeoutMs: number, wallet: Awaited<ReturnType<typeof MidnightWalletProvider.build>>['wallet']): Promise<bigint> {
+async function waitForNight(
+  timeoutMs: number,
+  wallet: Awaited<ReturnType<typeof MidnightWalletProvider.build>>['wallet'],
+): Promise<bigint> {
   const started = Date.now();
   const nightRaw = unshieldedToken().raw;
   while (Date.now() - started < timeoutMs) {
@@ -127,10 +156,9 @@ async function main(): Promise<void> {
   loadNetworkEnv(network);
   const seed = ensureSeed(network);
   const config = getConfig(network);
-  const contractAddress = resolveContractAddress(network);
   setNetworkId(config.networkId as 'preview' | 'preprod');
 
-  logger.info(`Network=${network} contract=${contractAddress}`);
+  logger.info(`Network=${network}`);
   logger.info(`Proof server=${config.proofServer} (reuse existing docker if :6300 is up)`);
 
   const wallet = await MidnightWalletProvider.build(logger, envConfigFor(network), seed);
@@ -155,6 +183,21 @@ async function main(): Promise<void> {
     zkConfigPath,
     privateStateStoreName: `eclipse-l2-${network}`,
   });
+
+  // Spares first: if the lifecycle calls below fail, the demo instances already exist.
+  const spareCount = Number(process.env['LIFECYCLE_SPARES'] ?? 0);
+  if (spareCount > 0) {
+    const spares: string[] = [];
+    for (let i = 0; i < spareCount; i++) spares.push(await deployFresh(providers));
+    const sparePath = resolve(rootDir, `docs/evidence/l3-demo-addresses-${network}.txt`);
+    writeFileSync(sparePath, `${spares.join('\n')}\n`, 'utf8');
+    logger.info(`Wrote ${spares.length} demo instance(s) to ${sparePath}`);
+  }
+  const contractAddress =
+    process.env['LIFECYCLE_DEPLOY'] === '1'
+      ? await deployFresh(providers)
+      : resolveContractAddress(network);
+  logger.info(`Lifecycle contract=${contractAddress}`);
 
   const publicStates = await getPublicStates(providers.publicDataProvider, contractAddress);
   const before = ledger(publicStates.contractState.data);
