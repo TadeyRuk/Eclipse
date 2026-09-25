@@ -19,9 +19,11 @@ while true; do
         echo "Sync Progress: $INDEX_LINE"
       fi
     fi
+    CHECKPOINT=$(grep -oE 'Checkpointed wallet sync at appliedIndex=[0-9]+' "$LOG" | tail -1)
+    echo "Last checkpoint: ${CHECKPOINT:-none yet}"
     echo
     echo "--- Recent Lifecycle Events ---"
-    grep -E 'Progress:|Contract deployed at:|Wrote [0-9]+ demo instance|Lifecycle contract=|Calling |txId=|Ledger status after:|ECLIPSE_L3_ONCHAIN_OK|FATAL|Unhandled|Timeout waiting|stalled at' "$LOG" | tail -12
+    grep -E 'Restored wallet from checkpoint|No usable wallet checkpoint|Circuit phase started|Contract deployed at:|Wrote [0-9]+ demo instance|Lifecycle contract=|Calling |txId=|failed \(attempt|landed in an earlier attempt|Ledger status after:|ECLIPSE_L3_ONCHAIN_OK|FATAL|Unhandled|Timeout waiting' "$LOG" | tail -12
   fi
   sleep 5
 done

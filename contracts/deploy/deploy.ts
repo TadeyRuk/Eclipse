@@ -7,7 +7,6 @@ import pino from 'pino';
 import { WebSocket } from 'ws';
 import {
   initializeMidnightProviders,
-  MidnightWalletProvider,
   type EnvironmentConfiguration,
 } from '@midnight-ntwrk/testkit-js';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
@@ -26,6 +25,7 @@ import {
   registerNightForDust,
   waitForSpendableDust,
 } from './dust.js';
+import { buildResumableWallet, checkpointOnSignal } from './walletState.js';
 import { CompiledEclipseContract, zkConfigPath, Contract } from '../index.js';
 
 /** Eclipse's concrete contract type — see lifecycle.ts. */
@@ -102,10 +102,7 @@ function nightBalance(state: Awaited<ReturnType<typeof latestState>>): bigint {
  * Unlike testkit syncWallet/waitForFunds, this does NOT require dust progress
  * to be strictly complete — fresh faucet wallets otherwise hang forever.
  */
-async function waitForNightBalance(
-  wallet: WalletFacade,
-  timeoutMs: number,
-): Promise<bigint> {
+async function waitForNightBalance(wallet: WalletFacade, timeoutMs: number): Promise<bigint> {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const state = await latestState(wallet);
@@ -131,7 +128,13 @@ async function main(): Promise<void> {
   setNetworkId(config.networkId as 'preview' | 'preprod');
   const env = envConfigFor(network);
 
-  const wallet = await MidnightWalletProvider.build(logger, env, seed);
+  const { provider: wallet, startCheckpointing } = await buildResumableWallet(
+    logger,
+    env,
+    seed,
+    network,
+    rootDir,
+  );
   const address = wallet.unshieldedKeystore.getBech32Address().asString();
 
   if (mode === 'init') {
@@ -145,6 +148,8 @@ async function main(): Promise<void> {
     return;
   }
 
+  const stopCheckpointing = startCheckpointing();
+  checkpointOnSignal(stopCheckpointing, logger);
   // Start without auto-faucet — Preview/Preprod drips require human captcha.
   await wallet.start(false);
   logger.info(`Waiting for tNIGHT at ${address}`);
@@ -194,6 +199,7 @@ async function main(): Promise<void> {
   console.log(`\nECLIPSE_CONTRACT_ADDRESS=${contractAddress}`);
   console.log(`Wrote ${outPath}\n`);
 
+  await stopCheckpointing();
   await wallet.stop();
 }
 

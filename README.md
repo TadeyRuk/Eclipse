@@ -155,10 +155,18 @@ Needs Lace (Preprod) + funded tDUST for a real wallet connect. Connect-only work
 cd contracts && MIDNIGHT_NETWORK=preprod npm run deploy
 ```
 
-On-chain create→fund→distribute (same Midnight.js path as the UI, deploy wallet):
+On-chain create→fund→distribute→claim (same Midnight.js path as the UI, deploy wallet):
 
 ```bash
 MIDNIGHT_NETWORK=preprod npm run lifecycle -w @eclipse/contracts
+```
+
+A cold Preprod wallet sync takes hours. For an unattended run, use the watchdog: it keeps the
+machine awake, restarts the script if the sync index stops advancing, and each restart resumes from
+the wallet checkpoint and run progress kept in `contracts/.states/` (gitignored):
+
+```bash
+MIDNIGHT_NETWORK=preprod LIFECYCLE_DEPLOY=1 bash contracts/deploy/run-lifecycle-watchdog.sh lifecycle contracts/logs/watchdog
 ```
 
 ## Live demo prerequisites
