@@ -37,13 +37,23 @@ const PREPROD = {
   indexerWS: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
 };
 
+// The generated module is typed per contract; the transport only needs these two exports.
+export type ContractModuleLoader = () => Promise<{
+  Contract: unknown;
+  ledger: (data: unknown) => Record<string, unknown>;
+}>;
+
 export type MidnightJsTransportConfig = {
   contractAddress: string;
   network: 'preprod' | 'preview' | 'undeployed';
   /** Absolute or origin-relative base for keys/ + zkir/ (e.g. https://host/zk/eclipse). */
   zkAssetBaseUrl: string;
-  /** URL path to dynamically import managed contract module (e.g. /zk/eclipse/contract/index.js). */
-  contractModuleUrl: string;
+  /**
+   * Loads the compiled contract module. Pass a bundler-visible `() => import(...)` of
+   * managed/eclipse/contract/index.js: the module imports @midnight-ntwrk/compact-runtime by bare
+   * specifier, so a runtime import of a raw public URL fails to resolve in the browser.
+   */
+  loadContractModule: ContractModuleLoader;
   proofServerUrl: string;
   getConnectedApi: () => ConnectedAPI | null;
   /** Fallback when Lace getConfiguration is unavailable. */
@@ -155,13 +165,11 @@ export class MidnightJsEclipseTransport implements EclipseCircuitTransport {
       },
     };
 
-    const contractModule = await import(
-      /* @vite-ignore */ this.config.contractModuleUrl
-    );
+    const contractModule = await this.config.loadContractModule();
     const Contract = contractModule.Contract;
     this.ledgerFn = contractModule.ledger;
 
-    const compiledContract = CompiledContract.make('EclipseContract', Contract).pipe(
+    const compiledContract = CompiledContract.make('EclipseContract', Contract as never).pipe(
       CompiledContract.withVacantWitnesses,
     );
 
@@ -188,9 +196,7 @@ export class MidnightJsEclipseTransport implements EclipseCircuitTransport {
     }
 
     if (!this.ledgerFn) {
-      const contractModule = await import(
-        /* @vite-ignore */ this.config.contractModuleUrl
-      );
+      const contractModule = await this.config.loadContractModule();
       this.ledgerFn = contractModule.ledger;
     }
 
@@ -266,24 +272,24 @@ export class MidnightJsEclipseTransport implements EclipseCircuitTransport {
 /** Indexer-only reader — no Lace required (observer view). */
 export class IndexerPayrollReader {
   private readonly contractAddress: string;
-  private readonly contractModuleUrl: string;
+  private readonly loadContractModule: ContractModuleLoader;
   private readonly indexerHttp: string;
   private readonly indexerWs: string;
 
   constructor(
     contractAddress: string,
-    contractModuleUrl: string,
+    loadContractModule: ContractModuleLoader,
     indexerHttp = PREPROD.indexer,
     indexerWs = PREPROD.indexerWS,
   ) {
     this.contractAddress = contractAddress;
-    this.contractModuleUrl = contractModuleUrl;
+    this.loadContractModule = loadContractModule;
     this.indexerHttp = indexerHttp;
     this.indexerWs = indexerWs;
   }
 
   async queryPublicPayroll(): Promise<Payroll> {
-    const contractModule = await import(/* @vite-ignore */ this.contractModuleUrl);
+    const contractModule = await this.loadContractModule();
     const publicDataProvider = indexerPublicDataProvider(this.indexerHttp, this.indexerWs);
     const { contractState } = await getPublicStates(
       publicDataProvider,

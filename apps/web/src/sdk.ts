@@ -9,11 +9,12 @@ import {
   type WalletPort,
   type EclipseCircuitTransport,
   type Payroll,
+  type ContractModuleLoader,
 } from '@eclipse/sdk';
 
 const contractAddress =
   import.meta.env.VITE_CONTRACT_ADDRESS ??
-  '3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47';
+  'c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774';
 
 const network = (import.meta.env.VITE_NETWORK ?? 'preprod') as EclipseSdkNetwork;
 
@@ -24,7 +25,10 @@ const proofServerUrl =
 const useChain = import.meta.env.VITE_USE_CHAIN === '1';
 
 const zkAssetBaseUrl = '/zk/eclipse';
-const contractModuleUrl = '/zk/eclipse/contract/index.js';
+// Bundled rather than fetched from /zk: the generated module imports compact-runtime by bare
+// specifier, which only the bundler can resolve.
+const loadContractModule = () =>
+  import('../../../contracts/managed/eclipse/contract/index.js') as ReturnType<ContractModuleLoader>;
 
 const sharedMemory = new InMemoryEclipseTransport();
 
@@ -85,7 +89,7 @@ class HybridTransport implements EclipseCircuitTransport {
 
 export function getSdk(): EclipseSdk {
   if (!sdkSingleton) {
-    const indexer = new IndexerPayrollReader(contractAddress, contractModuleUrl);
+    const indexer = new IndexerPayrollReader(contractAddress, loadContractModule);
     const transport = new HybridTransport(sharedMemory, () => chainTransport, indexer);
 
     sdkSingleton = createEclipseSdk({
@@ -102,7 +106,7 @@ export function getSdk(): EclipseSdk {
         contractAddress,
         network,
         zkAssetBaseUrl,
-        contractModuleUrl,
+        loadContractModule,
         proofServerUrl,
         getConnectedApi: () => lace.getConnectedApi(),
       });
