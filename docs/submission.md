@@ -35,8 +35,8 @@ README.md → judge-facing surface
 | Gate 0 — sum-proof spike | **Done** | `contracts/src/eclipse.compact`, `managed/eclipse`, sum-proof tests |
 | Level 1 — New Moon | **Filed** (Rise In, 2026-07-20) | Preprod `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`; evidence in `docs/evidence/`; tag `level-1` |
 | Level 2 — Waxing Crescent | **Ready to file** | Lace + dual-view UI + SDK adapters + privacy tests + Netlify config; evidence `l2-*.png`; storyboard `docs/evidence/l2-demo-storyboard.md` |
-| Gate 3 — idea #6 approval | **Proposal drafted** | [proposal.md](proposal.md) — awaiting submission to committee |
-| Level 3 — First Quarter | **In progress** | Done: CI + badge (with circuit drift and privacy-doc checks), 53 tests, `claim` circuit, real unshielded tNIGHT `fund`, proposal draft, demo video (real app capture, in-memory mode). Remaining: Preprod redeploy + live lifecycle run, filing |
+| Gate 3 — idea #6 approval | **Submitted** | [proposal.md](proposal.md) — submitted on Rise In, awaiting committee approval |
+| Level 3 — First Quarter | **In progress** | Done: CI + badge (with circuit drift and privacy-doc checks), 53 tests, `claim` circuit, real unshielded tNIGHT `fund`, proposal submitted, demo video (real app capture, in-memory mode), four-circuit Preprod redeploy + on-chain lifecycle (2026-09-26). Remaining: Lace/Preprod demo recording, filing |
 
 Progress chart: root [README.md](../README.md#progress-gantt).
 
@@ -79,13 +79,18 @@ Not filed yet. Only facts that are true today:
 - `claim` circuit: entitlement proof + double-claim guard; amount stays a private witness
 - `fund`: real unshielded tNIGHT deposit via `receiveUnshielded(nativeToken(), amount)`; shielded
   pay-out deferred to L4 ([boundaries.md](boundaries.md) decision log, 2026-09-23)
-- Proposal: [proposal.md](proposal.md), drafted, not yet submitted
+- Proposal: [proposal.md](proposal.md), submitted on Rise In, awaiting committee approval
 - Demo: `docs/evidence/l3-demo-app.mp4` (48 s screen capture of the real app, full flow, in-memory
   mode with a demo wallet, labelled on screen; script `l3-demo-app.record.mjs`) and
   `docs/evidence/l3-demo.mp4` (illustrated walkthrough)
-- **Pending:** Preprod redeploy with four circuits (the current `3aec836e…` predates `claim` and the
-  real `fund`), `npm run lifecycle` → `docs/evidence/l3-onchain-lifecycle.json`, tag `level-3`,
-  Rise In filing
+- Preprod redeploy (2026-09-26): live-demo instance
+  `c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774` (Netlify), spare
+  `027f48555fd1148c7fda0f3a98ae2bab9cbbcb4c017b03bbfced1dba63310381` (demo recording), lifecycle
+  instance `c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac`
+- On-chain lifecycle: `npm run lifecycle` confirmed createPayroll → fund → distribute → claim on the
+  lifecycle instance; tx ids and final ledger (`Distributed`, `depositTotal=100`, slot 0 claimed) in
+  `docs/evidence/l3-onchain-lifecycle.json`
+- **Pending:** one-minute demo recorded against Lace on Preprod, tag `level-3`, Rise In filing
 
 ---
 

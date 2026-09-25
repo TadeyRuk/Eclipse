@@ -17,15 +17,16 @@ Level 3 First Quarter **in progress** — CI/CD is green (typecheck → test →
 test suite stands at 53 across three workspaces, the `claim` circuit is live end to end (employee
 claims a slot without revealing its amount), `fund` takes a real unshielded tNIGHT deposit (the
 transaction only balances if the wallet moves the tokens), the product proposal for idea #6 is
-drafted ([docs/proposal.md](docs/proposal.md)), and the demo video is a real screen capture of the
-app running the full flow (see note below). Remaining: a Preprod redeploy carrying the new `fund` and `claim`
-circuits, and filing the proposal on Rise In for approval.
+submitted on Rise In and awaiting committee approval ([docs/proposal.md](docs/proposal.md)), and the
+four-circuit contract is redeployed to Preprod with the full create → fund → distribute → claim
+lifecycle confirmed on chain ([evidence](docs/evidence/l3-onchain-lifecycle.json)). Remaining: the
+one-minute demo recorded against Lace on Preprod, and filing.
 
 Running create → fund → distribute yourself needs a local proof-server on `127.0.0.1:6300` — circuits
 prove locally by design, so this is inherent to Midnight, not a shortcut. Connect-only works on the
 hosted demo without one.
 
-**Last updated:** 2026-09-23 · Program window: 2026-06-29 → 2026-07-31
+**Last updated:** 2026-09-26 · Program window: 2026-06-29 → 2026-07-31
 
 ### Live demo
 
@@ -41,16 +42,18 @@ Connect-only works on the hosted site without a proof-server. Create → fund �
 | Network | Address | Circuits |
 |---|---|---|
 | Preview | — | — |
-| Preprod | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) | `createPayroll`, `fund`, `distribute` |
+| Preprod — live demo | [`c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774`](https://explorer.1am.xyz/contract/c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774?network=preprod) | `createPayroll`, `fund`, `distribute`, `claim` |
+| Preprod — lifecycle run | [`c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac`](https://explorer.1am.xyz/contract/c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac?network=preprod) | `createPayroll`, `fund`, `distribute`, `claim` |
+| Preprod — L1/L2 (historical) | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) | `createPayroll`, stub `fund`, `distribute` |
 
-> **Note:** the deployed instance above predates the `claim` circuit and the real tNIGHT `fund` —
-> it carries the three L1/L2 circuits with the old stub `fund`, and its ledger has no `claimed`
-> vector. The repo now compiles four circuits, so `claim` and the token deposit are exercised by
-> the contract tests and the in-memory demo path, not yet by this address.
-> A redeploy is pending: a cold Preprod dust sync runs ~2 hours and does not resume across
-> attempts, which is the honest reason it is not done yet rather than an oversight.
+The live-demo instance starts `Uninitialized`, and one instance is one payroll run, so the hosted
+employer flow can be taken through once. The lifecycle instance was driven through all four
+circuits by `npm run lifecycle` on 2026-09-26 and ends `Distributed` with `depositTotal=100` and
+slot 0 claimed; its transaction ids are in
+[l3-onchain-lifecycle.json](docs/evidence/l3-onchain-lifecycle.json). The L1/L2 address predates
+`claim` and the real tNIGHT `fund` and is kept only as filing evidence for those levels.
 
-**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 tests (53 passing)](docs/evidence/l3-tests.png) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md) · [**L3 demo video (app capture)**](docs/evidence/l3-demo-app.mp4) · [L3 illustrated walkthrough](docs/evidence/l3-demo.mp4)
+**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 tests (53 passing)](docs/evidence/l3-tests.png) · [L3 on-chain lifecycle](docs/evidence/l3-onchain-lifecycle.json) · [L3 observer on Preprod](docs/evidence/l3-observer-onchain.png) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md) · [**L3 demo video (app capture)**](docs/evidence/l3-demo-app.mp4) · [L3 illustrated walkthrough](docs/evidence/l3-demo.mp4)
 
 > **L3 demo video ([l3-demo-app.mp4](docs/evidence/l3-demo-app.mp4), 48 s)** is a real screen
 > capture of this app running the full flow: connect → three recipients → deposit tNIGHT → private
@@ -89,8 +92,8 @@ gantt
     CI pipeline and badge             :done,    l3a, 2026-07-26, 1d
     Product proposal idea 6           :done,    l3b, 2026-07-26, 1d
     tNIGHT fund and claim             :done,    l3c, 2026-07-27, 3d
-    Preprod redeploy with claim       :active,  l3f, 2026-09-23, 1d
-    One minute demo video             :done,    l3d, 2026-07-30, 1d
+    Preprod redeploy and lifecycle    :done,    l3f, 2026-09-23, 4d
+    One minute demo video             :active,  l3d, 2026-09-26, 1d
     File Level3 on Rise In            :crit,    l3e, 2026-07-31, 1d
 ```
 
@@ -99,7 +102,7 @@ gantt
 | Gate 0 — sum-proof spike | **Done** |
 | Level 1 — New Moon | **Filed** (Rise In) |
 | Level 2 — Waxing Crescent (Lace + dual-view) | **Ready to file** (Rise In) |
-| Level 3 — First Quarter (full dApp + CI) | **In progress** — CI (+ circuit drift and privacy-doc checks), 53 tests, `claim`, tNIGHT `fund`, proposal draft, app-capture demo video done; redeploy pending |
+| Level 3 — First Quarter (full dApp + CI) | **In progress** — CI (+ circuit drift and privacy-doc checks), 53 tests, `claim`, tNIGHT `fund`, proposal submitted, four-circuit Preprod redeploy and on-chain lifecycle done; Lace/Preprod demo recording pending |
 
 Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level filing playbooks: [docs/submission.md](docs/submission.md).
 

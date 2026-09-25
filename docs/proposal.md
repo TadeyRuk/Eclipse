@@ -3,7 +3,7 @@
 **Idea list selection:** #6 — *Private Payroll / Splits: distribute funds without exposing amounts*
 **Submitted for:** Rise In *New Moon to Full: Monthly Moonshots on Midnight*, Level 3 committee approval
 **Repository:** https://github.com/TadeyRuk/Eclipse
-**Preprod contract:** `3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`
+**Preprod contract:** `c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774` (live demo, four circuits); lifecycle run `c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac`
 
 ---
 
