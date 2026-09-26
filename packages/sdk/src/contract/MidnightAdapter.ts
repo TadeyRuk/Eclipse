@@ -1,4 +1,4 @@
-import type { Address, Payroll, PayrollStatus, Receipt, Result } from '../types';
+import type { Address, ClaimableReceipt, Payroll, PayrollStatus, Receipt, Result } from '../types';
 import { MAX_RECIPIENTS } from '../types/domain';
 import { err } from '../types/result';
 import { safeAsync } from '../internal/safeAsync';
@@ -7,7 +7,6 @@ import type { WalletPort } from '../wallet/WalletPort';
 import type { LaceAdapter } from '../wallet/LaceAdapter';
 import type { EclipsePort } from './EclipsePort';
 import type { ReceiptStorePort } from '../private/ReceiptStorePort';
-import type { ReceiptRecord } from '../types/receiptRecord';
 import { MemoryReceiptStore } from '../private/MemoryReceiptStore';
 import {
   addressToBytes32,
@@ -314,9 +313,12 @@ export class MidnightAdapter implements EclipsePort {
     });
   }
 
-  /** Openings this wallet holds locally. Never leaves the device. */
-  async listLocalReceipts(): Promise<ReceiptRecord[]> {
-    return this.receipts.list(this.contractAddress);
+  /** Local claim metadata only; private amount and salt remain inside the adapter. */
+  async listClaimableReceipts(): Promise<Result<ClaimableReceipt[]>> {
+    return safeAsync('TxFailed', 'Failed to read local claim receipts', async () => {
+      const records = await this.receipts.list(this.contractAddress);
+      return records.map(({ slot, recipient }) => ({ slot, recipient }));
+    });
   }
 
   /** Test helper — not part of EclipsePort. */

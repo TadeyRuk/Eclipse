@@ -1,4 +1,4 @@
-import type { Address, Payroll, Receipt, Result } from '../types';
+import type { Address, ClaimableReceipt, Payroll, Receipt, Result } from '../types';
 
 export interface EclipsePort {
   /** Read public ledger snapshot (observer-safe). */
@@ -15,4 +15,6 @@ export interface EclipsePort {
    * (amount + salt) is read from local private storage, never from public state.
    */
   claim(slot?: number): Promise<Result<Receipt>>;
+  /** Local claim metadata only; private amount and salt remain inside the adapter. */
+  listClaimableReceipts(): Promise<Result<ClaimableReceipt[]>>;
 }

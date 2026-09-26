@@ -22,6 +22,12 @@ export interface Payroll {
   claimed: boolean[];
 }
 
+/** Local claim metadata only — never carries the private amount or salt. */
+export interface ClaimableReceipt {
+  slot: number;
+  recipient: Address;
+}
+
 export interface Receipt {
   recipient: Address;
   commitment: string;

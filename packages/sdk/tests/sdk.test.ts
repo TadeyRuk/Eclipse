@@ -292,6 +292,35 @@ describe('claim (private receipt openings)', () => {
       }
     }
   });
+
+  it('lists claimable slots without exposing receipt openings', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('ok', { status: 200 })),
+    );
+    const store = new MemoryReceiptStore();
+    const adapter = new MidnightAdapter(
+      new ProofClient({ proofServerUrl: 'http://127.0.0.1:6300' }),
+      mockWallet(true),
+      {
+        contractAddress: 'abc',
+        network: 'preprod',
+        transport: new InMemoryEclipseTransport(),
+        receiptStore: store,
+      },
+    );
+
+    await adapter.createPayroll(['bb'.repeat(32)]);
+    await adapter.fund(100n);
+    await adapter.distribute([100n]);
+
+    const result = await adapter.listClaimableReceipts();
+    expect(result).toEqual(ok([{ slot: 0, recipient: 'bb'.repeat(32) }]));
+    if (result.ok) {
+      expect(result.value[0]).not.toHaveProperty('amount');
+      expect(result.value[0]).not.toHaveProperty('saltHex');
+    }
+  });
 });
 
 describe('createEclipseSdk', () => {
