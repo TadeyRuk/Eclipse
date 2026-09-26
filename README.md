@@ -1,71 +1,52 @@
-# Eclipse
+<div align="center">
+
+# 🌘 Eclipse
+
+**Private payroll on [Midnight](https://midnight.network). The books are public. The salaries are not.**
 
 [![CI](https://github.com/TadeyRuk/Eclipse/actions/workflows/ci.yml/badge.svg)](https://github.com/TadeyRuk/Eclipse/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/live%20demo-netlify-00C7B7?logo=netlify&logoColor=white)](https://eclipse-private-payroll.netlify.app)
+[![Network](https://img.shields.io/badge/network-Midnight%20Preprod-4B2EAE)](https://explorer.1am.xyz/contract/c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac?network=preprod)
+[![Tests](https://img.shields.io/badge/tests-53%20passing-2ea44f)](docs/evidence/l3-tests.png)
+[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](#license)
 
-Private payroll on [Midnight](https://midnight.network). An employer deposits a fixed pool of tokens and distributes it across a known set of recipients with individually private amounts — a zero-knowledge proof guarantees the hidden amounts sum exactly to the public deposit, so anyone can verify the books balance without anyone, including the chain itself, ever learning who received what.
+[**Live demo**](https://eclipse-private-payroll.netlify.app) · [**On-chain proof**](docs/evidence/l3-onchain-lifecycle.json) · [**Privacy model**](docs/privacy-model.md) · [**Architecture**](docs/architecture.md)
 
-Built for Rise In's [New Moon to Full: Monthly Moonshots on Midnight](https://www.risein.com/programs/new-moon-to-full-monthly-moonshots-on-midnight) program — Level 3 idea list, *Private Payroll / Splits*.
+</div>
+
+An employer deposits a fixed pool of tokens and splits it across up to eight recipients. Each
+recipient's amount stays private, yet anyone can verify that the hidden amounts sum **exactly** to
+the public deposit. A zero-knowledge circuit enforces that sum on-chain, so recipients trust the
+math instead of the employer.
+
+Salary confidentiality is a workplace norm almost everywhere; public blockchains break it by
+default. Encryption would hide the numbers but prove nothing. Eclipse hides the numbers **and**
+proves the payroll balances.
+
+Built for Rise In's [New Moon to Full: Monthly Moonshots on Midnight](https://www.risein.com/programs/new-moon-to-full-monthly-moonshots-on-midnight)
+program, Level 3 idea #6, _Private Payroll / Splits_.
+
+<p align="center">
+  <img src="docs/evidence/l3-observer-onchain.png" alt="Observer view of a live Preprod payroll: status Distributed, deposit 100, eight opaque receipt commitments, slot 0 claimed, and no individual amounts" width="720">
+  <br>
+  <sub>The observer view of a real Preprod payroll: distributed, balanced, slot 0 claimed, and no amount anywhere.</sub>
+</p>
 
 ## Status
 
-Level 2 Waxing Crescent **ready to file** — all requirements met: Lace connect/disconnect, a circuit
-called from the frontend, observable privacy via the dual-view UI (employer wizard + observer
-ledger), a verifiable Preprod contract, live demo, and demo video. SDK adapters sit behind a
-`Result` boundary; privacy wipe tests cover the amount-clearing claim.
+**Level 3 (First Quarter), in progress.** Everything below is verified on Preprod or in CI.
 
-Level 3 First Quarter **in progress** — CI/CD is green (typecheck → test → build on every push), the
-test suite stands at 53 across three workspaces, the `claim` circuit is live end to end (employee
-claims a slot without revealing its amount), `fund` takes a real unshielded tNIGHT deposit (the
-transaction only balances if the wallet moves the tokens), the product proposal for idea #6 is
-submitted on Rise In and awaiting committee approval ([docs/proposal.md](docs/proposal.md)), and the
-four-circuit contract is redeployed to Preprod with the full create → fund → distribute → claim
-lifecycle confirmed on chain ([evidence](docs/evidence/l3-onchain-lifecycle.json)). Remaining: the
-one-minute demo recorded against Lace on Preprod, and filing.
+|                           |                                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ✅ Four circuits on-chain | `createPayroll` → `fund` → `distribute` → `claim` confirmed on Preprod ([tx ids](docs/evidence/l3-onchain-lifecycle.json)) |
+| ✅ Real token deposit     | `fund` moves real unshielded tNIGHT into the contract                                                                      |
+| ✅ Live demo              | Reads the Preprod ledger; Lace connects on Midnight Preprod                                                                |
+| ✅ Tests + CI             | 53 tests; CI checks types, tests, build, circuit drift, and privacy docs on every push                                     |
+| ✅ Proposal               | Idea #6 submitted on Rise In, awaiting committee approval ([proposal](docs/proposal.md))                                   |
+| ⏳ Remaining              | One-minute demo recorded against Lace on Preprod; Level 3 filing                                                           |
 
-Running create → fund → distribute yourself needs a local proof-server on `127.0.0.1:6300` — circuits
-prove locally by design, so this is inherent to Midnight, not a shortcut. Connect-only works on the
-hosted demo without one.
-
-**Last updated:** 2026-09-26 · Program window: 2026-06-29 → 2026-07-31
-
-### Live demo
-
-| Surface | URL |
-|---|---|
-| Employer wizard | [https://eclipse-private-payroll.netlify.app/employer](https://eclipse-private-payroll.netlify.app/employer) |
-| Observer ledger | [https://eclipse-private-payroll.netlify.app/observer](https://eclipse-private-payroll.netlify.app/observer) |
-
-Connect-only works on the hosted site without a proof-server. Create → fund → distribute needs Lace (Preprod) plus a local proof-server on `127.0.0.1:6300`.
-
-### Contract address
-
-| Network | Address | Circuits |
-|---|---|---|
-| Preview | — | — |
-| Preprod — live demo | [`c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774`](https://explorer.1am.xyz/contract/c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774?network=preprod) | `createPayroll`, `fund`, `distribute`, `claim` |
-| Preprod — lifecycle run | [`c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac`](https://explorer.1am.xyz/contract/c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac?network=preprod) | `createPayroll`, `fund`, `distribute`, `claim` |
-| Preprod — L1/L2 (historical) | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) | `createPayroll`, stub `fund`, `distribute` |
-
-The live-demo instance starts `Uninitialized`, and one instance is one payroll run, so the hosted
-employer flow can be taken through once. The lifecycle instance was driven through all four
-circuits by `npm run lifecycle` on 2026-09-26 and ends `Distributed` with `depositTotal=100` and
-slot 0 claimed; its transaction ids are in
-[l3-onchain-lifecycle.json](docs/evidence/l3-onchain-lifecycle.json). The L1/L2 address predates
-`claim` and the real tNIGHT `fund` and is kept only as filing evidence for those levels.
-
-**Evidence:** [L1 compile](docs/evidence/l1-compile.png) · [L1 deploy](docs/evidence/l1-deploy.png) · [L2 connect](docs/evidence/l2-connect.png) · [L2 distribute](docs/evidence/l2-distribute.png) · [L2 observer](docs/evidence/l2-observer.png) · [L2 demo video](docs/evidence/l2-demo.webm) · [L2 storyboard](docs/evidence/l2-demo-storyboard.md) · [L3 tests (53 passing)](docs/evidence/l3-tests.png) · [L3 on-chain lifecycle](docs/evidence/l3-onchain-lifecycle.json) · [L3 observer on Preprod](docs/evidence/l3-observer-onchain.png) · [L3 storyboard](docs/evidence/l3-demo-storyboard.md) · [**L3 demo video (app capture)**](docs/evidence/l3-demo-app.mp4) · [L3 illustrated walkthrough](docs/evidence/l3-demo.mp4)
-
-> **L3 demo video ([l3-demo-app.mp4](docs/evidence/l3-demo-app.mp4), 48 s)** is a real screen
-> capture of this app running the full flow: connect → three recipients → deposit tNIGHT → private
-> amounts → distribute → observer view → employee claim → observer shows slot 0 claimed, with no
-> amount visible anywhere. It runs in **in-memory mode** (`VITE_USE_CHAIN=0`) with a demo wallet
-> standing in for Lace, and says so in an on-screen banner: no Preprod transactions happen in it.
-> The recording is scripted and reproducible:
-> [`l3-demo-app.record.mjs`](docs/evidence/l3-demo-app.record.mjs).
-> [l3-demo.mp4](docs/evidence/l3-demo.mp4) is an illustrated Remotion walkthrough of the same six
-> beats. The L2 video is a real capture with Lace connected on Preprod.
-
-### Progress (Gantt)
+<details id="progress-gantt">
+<summary><b>Progress (Gantt)</b></summary>
 
 ```mermaid
 gantt
@@ -97,154 +78,218 @@ gantt
     File Level3 on Rise In            :crit,    l3e, 2026-07-31, 1d
 ```
 
-| Gate / level | State |
-|---|---|
-| Gate 0 — sum-proof spike | **Done** |
-| Level 1 — New Moon | **Filed** (Rise In) |
-| Level 2 — Waxing Crescent (Lace + dual-view) | **Ready to file** (Rise In) |
-| Level 3 — First Quarter (full dApp + CI) | **In progress** — CI (+ circuit drift and privacy-doc checks), 53 tests, `claim`, tNIGHT `fund`, proposal submitted, four-circuit Preprod redeploy and on-chain lifecycle done; Lace/Preprod demo recording pending |
+Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level playbooks: [docs/submission.md](docs/submission.md).
 
-Sequencing rules: [docs/boundaries.md](docs/boundaries.md). Level filing playbooks: [docs/submission.md](docs/submission.md).
+</details>
 
-## Initial idea
+## How it works
 
-Eclipse is a private payroll dApp on Midnight. An employer deposits a fixed pool of test tokens, assigns each recipient's share privately, and distributes in one atomic transaction. A zero-knowledge proof guarantees the hidden amounts sum exactly to the public deposit — so recipients and observers can trust the books balance without anyone (including the chain itself) ever seeing who earned what. Salary privacy is a real-world norm; Eclipse makes it a verifiable one.
+One contract instance is one payroll run. It moves through four circuits; each leaves a public
+trace on the ledger while the amounts stay behind the proof.
 
-## Privacy claim (L2)
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Uninitialized: deploy
+    Uninitialized --> Created: createPayroll(recipients)
+    Created --> Funded: fund(amount) + tNIGHT deposit
+    Funded --> Distributed: distribute(amounts, salts)
+    Distributed --> Distributed: claim(slot) per recipient
 
-Individual payroll amounts are **private witnesses**. Observers (and the chain) see employer, recipient addresses, `depositTotal`, `status`, and opaque `receiptCommitments` — never plaintext per-recipient amounts. The employer UI clears amounts from memory and the DOM after a successful distribute; the `/observer` route has no amount inputs. Disclosure ledger: [docs/privacy-model.md](docs/privacy-model.md).
-
-## Public state vs private witness
-
-In Compact, circuit inputs are **private by default**. Data becomes public when it is written to the ledger (or returned / passed cross-contract) — not merely because `disclose()` appears in source.
-
-| Public (ledger) | Private (witnesses) |
-|---|---|
-| Employer, recipient addresses, `depositTotal` | Per-recipient `amounts` |
-| `status` (`Created` → `Funded` → `Distributed`) | Per-recipient `salts` |
-| `receiptCommitments` (opaque hashes) | Anything not written to ledger |
-
-`distribute()` asserts `sum(amounts) == depositTotal` without putting individual amounts on-chain.
-
-## Quick Start
-
-```bash
-# Node 22 (see .nvmrc)
-npm install
-
-# Compile the Compact contract (requires Compact CLI)
-cd contracts && npm run compile
-
-# Contract + SDK + web privacy tests
-npm test
+    note right of Funded
+        depositTotal is now public
+    end note
+    note right of Distributed
+        proof enforced sum(amounts) == depositTotal
+        only commitments were written
+    end note
 ```
 
-### Web UI (local)
+| Circuit         | Caller    | Private witnesses        | Becomes public                                                 |
+| --------------- | --------- | ------------------------ | -------------------------------------------------------------- |
+| `createPayroll` | Employer  | —                        | `employer`, `recipients`, `status = Created`                   |
+| `fund`          | Employer  | —                        | `depositTotal`, `status = Funded`, the unshielded tNIGHT input |
+| `distribute`    | Employer  | `amounts[8]`, `salts[8]` | 8 `receiptCommitments`, `status = Distributed`                 |
+| `claim`         | Recipient | `amount`, `salt`         | `claimed[slot] = true`                                         |
 
-```bash
-# Terminal A — proof server (required for create/fund/distribute); pin to ledger 8.1.0
-docker run -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
+There is no withdrawal, top-up, or re-distribute circuit. The absence of that code is the control.
 
-# Terminal B — dual-view app (add VITE_USE_CHAIN=1 for real Preprod callTx)
-npm run dev -w @eclipse/web
-# open http://127.0.0.1:5173/employer and /observer
+## Architecture
+
+Circuits execute **locally**: private inputs go only to a proof server on the user's own machine,
+and only proofs and signed transactions reach the network. The web app never imports Midnight.js;
+everything crosses one SDK whose ports return a typed `Result` and whose adapters are the only files
+that touch Lace or Midnight.js. Full design: [docs/architecture.md](docs/architecture.md).
+
+```mermaid
+flowchart LR
+    U(["👤 Employer / recipient"])
+
+    subgraph device["🖥️ User's device · private"]
+        UI["<b>apps/web</b><br/>React UI"]
+        SDK["<b>packages/sdk</b><br/>ports → adapters"]
+        PS["<b>Proof server</b><br/>127.0.0.1:6300"]
+        LACE["<b>Lace</b><br/>wallet"]
+    end
+
+    subgraph chain["🌐 Midnight Preprod · public"]
+        NODE["<b>Eclipse contract</b><br/>verifier + ledger"]
+        IX["<b>Indexer</b><br/>GraphQL"]
+    end
+
+    U --> UI -->|"typed Result"| SDK
+    SDK -->|"private witnesses"| PS
+    PS -.->|"ZK proof"| SDK
+    SDK -->|"proof + unsigned tx"| LACE
+    LACE -->|"signed tx"| NODE
+    NODE --> IX
+    IX -.->|"public ledger state"| SDK
 ```
 
-Needs Lace (Preprod) + funded tDUST for a real wallet connect. Connect-only works without the proof-server; circuits call `ProofClient.healthCheck()` first and fail closed if `:6300` is down.
+| Package                               | Role                                                                                                            |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [`contracts/`](contracts)             | Compact contract (`src/eclipse.compact`), compiled circuits and keys (`managed/`), deploy and lifecycle scripts |
+| [`packages/sdk/`](packages/sdk)       | The only layer that touches Midnight.js or the wallet: ports, adapters, `Result` error taxonomy                 |
+| [`apps/web/`](apps/web)               | Role-scoped React UI; codes against SDK ports only                                                              |
+| [`packages/config/`](packages/config) | Shared strict `tsconfig` and prettier config                                                                    |
 
-### Deploy contract (Preprod)
+## Data flow
 
-```bash
-cd contracts && MIDNIGHT_NETWORK=preprod npm run deploy
+### Distribute: where the amounts go, and where they don't
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor E as Employer
+    participant UI as Web app
+    participant SDK as Eclipse SDK
+    participant PS as Proof server (local)
+    participant L as Lace
+    participant N as Midnight node + contract
+    participant IX as Indexer
+    actor O as Observer
+
+    E->>UI: enter private amounts
+    UI->>SDK: distribute(amounts)
+    SDK->>SDK: generate 8 random salts
+    Note over SDK: circuit runs locally: asserts sum(amounts) == depositTotal,<br/>computes H(amount, recipient, salt) for each slot
+    SDK->>PS: private inputs (loopback only)
+    PS-->>SDK: ZK proof
+    SDK->>SDK: keep receipt openings (amount, salt) in device memory
+    SDK->>L: balance + sign transaction
+    L->>N: submit proof + commitments
+    Note over N: verifier accepts only a balanced proof
+    N->>IX: status = Distributed, receiptCommitments
+    UI->>UI: wipe amounts from memory and DOM
+    O->>IX: read ledger
+    IX-->>O: status, depositTotal, recipients, commitments
+    Note over O: no individual amount exists on-chain
 ```
 
-On-chain create→fund→distribute→claim (same Midnight.js path as the UI, deploy wallet):
+### Claim: proving entitlement without stating the amount
 
-```bash
-MIDNIGHT_NETWORK=preprod npm run lifecycle -w @eclipse/contracts
+```mermaid
+sequenceDiagram
+    autonumber
+    actor R as Recipient
+    participant SDK as Eclipse SDK
+    participant PS as Proof server (local)
+    participant N as Midnight node + contract
+    actor O as Observer
+
+    R->>SDK: claim(slot)
+    Note over SDK: circuit re-derives H(amount, recipient, salt)<br/>and checks it equals the commitment in that slot
+    SDK->>PS: private inputs (loopback only)
+    PS-->>SDK: ZK proof
+    SDK->>N: submit via Lace
+    Note over N: rejects wrong amount, wrong salt,<br/>impostor key, or a second claim
+    N-->>O: claimed[slot] = true
+    Note over O: learns which slot claimed, never how much
 ```
 
-A cold Preprod wallet sync takes hours. For an unattended run, use the watchdog: it keeps the
-machine awake, restarts the script if the sync index stops advancing, and each restart resumes from
-the wallet checkpoint and run progress kept in `contracts/.states/` (gitignored):
+## Privacy model
+
+The ledger holds only the facts that must be public for the payroll to be verifiable; everything
+else is a private witness that never leaves the prover. Canonical disclosure ledger and trust
+assumptions: [docs/privacy-model.md](docs/privacy-model.md).
+
+| Public (ledger)                                         | Private (witnesses)                |
+| ------------------------------------------------------- | ---------------------------------- |
+| Employer, recipient addresses, `depositTotal`           | Per-recipient `amounts`            |
+| `status` (`Created` → `Funded` → `Distributed`)         | Per-recipient `salts`              |
+| `receiptCommitments` (opaque hashes), `claimed[]` flags | Anything not written to the ledger |
+
+**Why ZK, not encryption:** encrypted amounts would hide the values but prove nothing, so an observer
+could not tell an honest payroll from one where the employer kept half the pool. Because the sum
+check runs inside the circuit, an unbalanced distribution cannot produce a valid proof.
+
+**Honest limitations**, each weighed in [docs/privacy-model.md](docs/privacy-model.md):
+
+- **Small N leaks by arithmetic.** With one recipient, their amount equals the public total; privacy is meaningful from three recipients up.
+- **The deposit total and recipient list are public in v1.** Eclipse protects the split, not the spend or the membership.
+- **Claim timing is public.** Observers see which slot claimed and when, never how much.
+- **Receipt openings live on the device that ran `distribute`**, so a claim runs where those openings are.
+- **`claim` proves entitlement but does not pay out yet.** The deposit stays in the contract; private pay-out is Level 4 ([decision log](docs/boundaries.md)).
+
+## Deployed contracts
+
+| Network                      | Address                                                                                                                                                                                  | Circuits                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Preprod — live demo          | [`c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774`](https://explorer.1am.xyz/contract/c5f76edd6ac17076b4fca57218c01fb5e88f9b66248c0bb665b5fc0ab2bb6774?network=preprod) | `createPayroll`, `fund`, `distribute`, `claim` |
+| Preprod — lifecycle run      | [`c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac`](https://explorer.1am.xyz/contract/c3c8b06a7a6fe153b299dc2a6285bb4874615bd54d4614ba274a71b2899bdfac?network=preprod) | `createPayroll`, `fund`, `distribute`, `claim` |
+| Preprod — L1/L2 (historical) | [`3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47`](https://explorer.1am.xyz/contract/3aec836e6c723531cb13803e63795d531117c73231fa7793372c504a8bfa3d47?network=preprod) | `createPayroll`, stub `fund`, `distribute`     |
+
+The live-demo instance starts `Uninitialized` and runs one payroll. The lifecycle instance was
+driven through all four circuits by `npm run lifecycle` on 2026-09-26 and ends `Distributed` with
+`depositTotal=100` and slot 0 claimed. The L1/L2 address predates `claim` and the real tNIGHT
+`fund`, and stays only as filing evidence for those levels.
+
+## Try the live demo
+
+The hosted app reads the chain for anyone. Running a circuit also needs a wallet and a local proof
+server, because proving is local by design.
+
+1. Install [Lace](https://www.lace.io/). In **Settings → Network**, choose **Testnet**, then under **Midnight** choose **Preprod**. The Midnight setting is separate and defaults to Preview; the wrong one fails with `Network ID mismatch`.
+2. Copy your unshielded address (`mn_addr_preprod1…`, under **Receive → Unshielded**) into the [Preprod faucet](https://faucet.preprod.midnight.network/).
+3. In Lace, open the **D** button and designate your tNIGHT for DUST generation. Fees are paid in tDUST, so wait until the tank reads above 0.
+4. Start the proof server:
+   ```bash
+   docker run -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
+   ```
+5. Open the [live demo](https://eclipse-private-payroll.netlify.app/employer), connect Lace, then create → deposit → distribute, and watch [`/observer`](https://eclipse-private-payroll.netlify.app/observer).
+
+## Quick start
+
+```bash
+npm install                         # Node 22 (see .nvmrc)
+npm test                            # 53 tests across contracts, SDK, web
+npm run dev -w @eclipse/web         # http://127.0.0.1:5173 (VITE_USE_CHAIN=1 for Preprod)
+```
+
+The compiled circuits in `contracts/managed/` are committed, so none of the above needs the Compact
+compiler or a proof server. Recompile with `cd contracts && npm run compile` (Compact CLI).
+
+<details>
+<summary><b>Deploy and run the full lifecycle on Preprod</b></summary>
+
+```bash
+cd contracts && MIDNIGHT_NETWORK=preprod npm run deploy              # deploy one instance
+MIDNIGHT_NETWORK=preprod npm run lifecycle -w @eclipse/contracts      # create → fund → distribute → claim
+```
+
+A cold Preprod wallet sync takes hours. For an unattended run, the watchdog keeps the machine
+awake, restarts the script if the sync index stops advancing, and resumes from the wallet
+checkpoint and run progress kept in `contracts/.states/` (gitignored):
 
 ```bash
 MIDNIGHT_NETWORK=preprod LIFECYCLE_DEPLOY=1 bash contracts/deploy/run-lifecycle-watchdog.sh lifecycle contracts/logs/watchdog
 ```
 
-## Live demo prerequisites
+`LIFECYCLE_SPARES=N` also deploys N untouched instances for the Lace demo. Transport modes:
+`VITE_USE_CHAIN=0` runs an in-memory ledger for fee-free privacy demos; `VITE_USE_CHAIN=1` calls the
+deployed contract through Lace and the local proof server.
 
-Judges on Netlify **cannot** use your laptop’s proof-server unless they run one locally.
-
-1. Install [Lace](https://www.lace.io/) and switch to **Preprod**
-2. Fund tDUST via the Midnight faucet (and ensure Night is registered for dust generation)
-3. Run the proof-server on loopback:
-
-```bash
-docker run -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
-```
-
-4. Open the live demo → Connect Lace → Employer create → deposit tNIGHT → distribute (`VITE_USE_CHAIN=1` on Netlify)
-5. Open `/observer`: public status + commitments; **no** private amounts
-
-Transport modes:
-
-- **`VITE_USE_CHAIN=0`:** in-memory ledger for dual-view privacy demos without fees
-- **`VITE_USE_CHAIN=1`:** Midnight.js `findDeployedContract` + `callTx` via Lace + local proof-server **8.1.0**; observer reads the Preprod indexer
-
-## Architecture
-
-Monorepo: `apps/web` → `packages/sdk` → Lace / proof-server. The web app never imports Midnight.js. SDK ports (`WalletPort`, `EclipsePort`) return typed `Result`; adapters (`LaceAdapter`, `MidnightAdapter`, `ProofClient`) are the only external-touch files.
-
-Details: [docs/architecture.md](docs/architecture.md). Scope gates: [docs/boundaries.md](docs/boundaries.md).
-
-## Privacy Model
-
-### What an observer can learn
-
-Anyone querying the chain sees the employer address, the full recipient list, the `depositTotal`, the
-lifecycle `status`, and eight opaque `receiptCommitments`. When `status = Distributed`, they also
-learn something stronger: that the distribution **provably balanced** — the hidden amounts sum
-exactly to the public deposit.
-
-### What an observer cannot learn
-
-No chain query by anyone — including the employer — returns an individual amount. Per-recipient
-`amounts` and `salts` are private witnesses; they never become ledger state. The commitments are
-hashes, opaque without the opening a recipient holds.
-
-| Fact | Employer | Recipient (self) | Recipient (others) | Observer |
-|---|---|---|---|---|
-| Payroll exists, employer address | ✅ | ✅ | ✅ | ✅ |
-| Deposit total | ✅ | ✅ | ✅ | ✅ |
-| Recipient list | ✅ | ✅ | ✅ | ✅ |
-| Distribution balanced (proven) | ✅ | ✅ | ✅ | ✅ |
-| Which slots have claimed | ✅ | ✅ | ✅ | ✅ |
-| Own amount | ✅ | ✅ | — | ❌ |
-| **Any individual amount from chain data** | ❌ | ❌ | ❌ | ❌ |
-
-### Why this needs ZK rather than encryption
-
-Posting encrypted amounts would hide the values but prove nothing — an observer could not distinguish
-an honest payroll from one whose numbers don't add up, or where the employer kept half the pool.
-Because the sum check runs *inside* the circuit, an unbalanced distribution cannot produce a valid
-proof, so it cannot be confirmed. Recipients trust the math, not the employer.
-
-### Honest limitations
-
-- **Small-N inference.** With one recipient, their amount equals the public total; with two, each can
-  infer the other's. Amount privacy is meaningful from N=3 upward — a property of the arithmetic, not
-  a defect in the circuit.
-- **Claim timing is public.** `claimed[]` is a per-slot flag, so observers learn which recipient
-  claimed and when — never how much. A nullifier-set design would hide the slot too; it was weighed
-  and deferred, since the amount-privacy claim does not depend on it.
-- **The deposit total is public by design.** Observers learn the company distributed 1000 tokens.
-  What is protected is the split, not the spend.
-- **The recipient list is public in v1.** Observers learn *who* was paid, not *how much*. Hiding
-  membership is a possible v2, out of scope per [docs/boundaries.md](docs/boundaries.md).
-- **Off-chain leakage is out of scope.** If the employer emails a spreadsheet, no chain helps.
-
-Full disclosure ledger and trust assumptions: [docs/privacy-model.md](docs/privacy-model.md).
+</details>
 
 ## Testing
 
@@ -252,44 +297,39 @@ Full disclosure ledger and trust assumptions: [docs/privacy-model.md](docs/priva
 npm test
 ```
 
-53 tests across three workspaces:
+| Workspace      | Tests | Covers                                                                                                                                                                           |
+| -------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contracts`    | 20    | Sum-proof rejections, exact tNIGHT deposit, lifecycle ordering, claim (wrong amount, wrong salt, impostor key, double claim all rejected), ledger exposes only documented fields |
+| `@eclipse/sdk` | 17    | `Result` mapping, salts, proof-server loopback, mock-port adapters, receipt storage, claim path                                                                                  |
+| `@eclipse/web` | 16    | Amounts wiped after distribute, claim never renders the amount, observer has no amount fields, UI primitives                                                                     |
 
-- **contracts** — 20 tests: sum-proof (sum above or below the deposit rejected, value on an unused
-  slot rejected), fund (requires an unshielded native-token deposit of exactly the amount; rejected
-  before create or when already funded), lifecycle ordering, claim (valid opening; wrong amount,
-  wrong salt, impostor key, out-of-range slot, double claim and claim-before-distribute all
-  rejected), and ledger privacy (the ledger exposes exactly the documented public fields; salted
-  commitments differ for equal amounts)
-- **@eclipse/sdk** — 17 tests: Result mapping, salts, ProofClient loopback, mock-port adapters,
-  receipt-opening storage and the claim path
-- **@eclipse/web** — 16 tests: amount wipe after distribute, employee claims without rendering the
-  amount, observer has no private amount fields, `MAX_RECIPIENTS` validation (6 privacy tests), plus
-  10 render/prop tests for the Card/Tag/Button/Pill/StatChip/GradientField UI primitives
+[`ci.yml`](.github/workflows/ci.yml) runs on every push and pull request to `main`:
 
-### CI
+- **typecheck · test · build**, then `npm run check:privacy`, which fails if any `export ledger` field or `export circuit` is missing from [docs/privacy-model.md](docs/privacy-model.md).
+- **compiled circuit matches source**: recompiles with the pinned Compact compiler (0.31.1) and fails if the committed `contracts/managed/` differs, so the circuits the tests exercise and the app serves are provably this source.
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and pull request to
-`main`, as two jobs:
+## Evidence
 
-- **typecheck · test · build**, then `npm run check:privacy`: every `export ledger` field and every
-  `export circuit` in the contract must appear in [docs/privacy-model.md](docs/privacy-model.md), so
-  a new public fact cannot ship without a disclosure row.
-- **compiled circuit matches source**: installs the pinned Compact compiler (0.31.1), recompiles,
-  and fails if the committed `contracts/managed/` (circuit JS, prover/verifier keys, zkir) differs.
-  The artifacts the tests exercise and the app serves are provably this source.
-
-Because `managed/` is committed, the test job needs neither the compiler nor a proof server.
+| Artifact                                                                                                                                                                                              | What it shows                                                                                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [l3-onchain-lifecycle.json](docs/evidence/l3-onchain-lifecycle.json)                                                                                                                                  | Tx ids for all four circuits on Preprod and the final ledger                                                                                                                                      |
+| [l3-observer-onchain.png](docs/evidence/l3-observer-onchain.png)                                                                                                                                      | Observer view of that payroll, read live from Preprod                                                                                                                                             |
+| [l3-tests.png](docs/evidence/l3-tests.png)                                                                                                                                                            | 53 passing tests                                                                                                                                                                                  |
+| [l3-demo-app.mp4](docs/evidence/l3-demo-app.mp4)                                                                                                                                                      | 48 s capture of the real app running the full flow in **in-memory mode** with a demo wallet (labelled on screen); reproducible via [l3-demo-app.record.mjs](docs/evidence/l3-demo-app.record.mjs) |
+| [l3-demo.mp4](docs/evidence/l3-demo.mp4)                                                                                                                                                              | Illustrated walkthrough of the same flow                                                                                                                                                          |
+| [l2-demo.webm](docs/evidence/l2-demo.webm) · [l2-connect.png](docs/evidence/l2-connect.png) · [l2-distribute.png](docs/evidence/l2-distribute.png) · [l2-observer.png](docs/evidence/l2-observer.png) | Level 2: Lace connected on Preprod, dual-view UI                                                                                                                                                  |
+| [l1-compile.png](docs/evidence/l1-compile.png) · [l1-deploy.png](docs/evidence/l1-deploy.png)                                                                                                         | Level 1: compile and first Preprod deploy                                                                                                                                                         |
 
 ## Documentation
 
-| Doc | Contents |
-|---|---|
-| [docs/README.md](docs/README.md) | Docs index |
-| [docs/proposal.md](docs/proposal.md) | Product proposal — idea #6, Private Payroll / Splits |
-| [docs/submission.md](docs/submission.md) | Rise In submission playbook |
-| [docs/architecture.md](docs/architecture.md) | System design |
-| [docs/privacy-model.md](docs/privacy-model.md) | Who learns what |
-| [docs/boundaries.md](docs/boundaries.md) | Scope and gates |
+| Doc                                            | Contents                                                         |
+| ---------------------------------------------- | ---------------------------------------------------------------- |
+| [docs/architecture.md](docs/architecture.md)   | System design: contract, SDK adapters, frontend, security, CI    |
+| [docs/privacy-model.md](docs/privacy-model.md) | Who learns what; every public ledger write and its justification |
+| [docs/boundaries.md](docs/boundaries.md)       | Scope, numeric guardrails, sequencing gates, decision log        |
+| [docs/proposal.md](docs/proposal.md)           | Product proposal for idea #6                                     |
+| [docs/submission.md](docs/submission.md)       | Rise In level playbooks and filing records                       |
+| [docs/README.md](docs/README.md)               | Docs index                                                       |
 
 ## License
 
