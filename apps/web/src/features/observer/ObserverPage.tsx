@@ -1,39 +1,17 @@
-import { describeError } from '../lib/describeError';
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Wallet } from 'lucide-react';
-import type { EclipseErrorKind, Payroll } from '@eclipse/sdk';
-import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
-import { Card } from '../components/ui/Card';
-import { Tag } from '../components/ui/Tag';
-import { StatChip } from '../components/ui/StatChip';
+import { Card, Tag, StatChip } from '../../shared/ui';
+import { usePublicPayroll } from './usePublicPayroll';
 
-/**
- * Observer view — public ledger fields only.
- * No amount inputs; proves L2 observable privacy.
- */
 export function ObserverPage() {
-  const { sdk, contractAddress, explorerUrl } = useEclipseRuntime();
-  const [payroll, setPayroll] = useState<Payroll | null>(null);
-  const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const res = await sdk.eclipse.getPublicPayroll();
-      if (cancelled) return;
-      if (!res.ok) {
-        setErrorKind(res.error.kind);
-        setErrorMessage(describeError(res.error));
-        return;
-      }
-      setPayroll(res.value);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [sdk]);
+  const {
+    payroll,
+    loading,
+    notice,
+    refresh,
+    contractAddress,
+    explorerUrl,
+  } = usePublicPayroll();
 
   return (
     <section data-testid="observer-page">
@@ -47,15 +25,16 @@ export function ObserverPage() {
         Contract: {contractAddress}
       </p>
 
-      {errorKind ? (
+      {notice ? (
         <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
-          {errorKind}
-          {errorMessage ? `: ${errorMessage}` : ''}
+          {notice.kind}: {notice.message}
         </p>
       ) : null}
 
       {!payroll ? (
-        <p className="text-sm text-[var(--eclipse-ink-muted)]">Loading public state…</p>
+        <p className="text-sm text-[var(--eclipse-ink-muted)]">
+          {loading ? 'Loading public state…' : 'No payroll data available.'}
+        </p>
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -124,11 +103,7 @@ export function ObserverPage() {
       <button
         type="button"
         className="mt-4 block text-sm text-[var(--eclipse-ink-muted)] underline"
-        onClick={() => {
-          void sdk.eclipse.getPublicPayroll().then((res) => {
-            if (res.ok) setPayroll(res.value);
-          });
-        }}
+        onClick={() => void refresh()}
       >
         Refresh
       </button>

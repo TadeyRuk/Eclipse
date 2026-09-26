@@ -1,127 +1,37 @@
-import { describeError } from '../lib/describeError';
-import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MAX_RECIPIENTS, type EclipseErrorKind, type Payroll } from '@eclipse/sdk';
-import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
-import { useWalletSession } from '../shared/runtime/useWalletSession';
-import { validateAmounts, validateRecipients } from '../lib/validate';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Pill } from '../components/ui/Pill';
+import { MAX_RECIPIENTS, type Payroll } from '@eclipse/sdk';
+import { Card, Button, Pill } from '../../shared/ui';
+import { useEmployerFlow, type EmployerStage } from './useEmployerFlow';
 
-type WizardStep = 'recipients' | 'deposit' | 'amounts' | 'prove';
+const STAGE_TO_STEP: Record<EmployerStage, 'recipients' | 'deposit' | 'amounts' | 'prove'> = {
+  draft: 'recipients',
+  Created: 'deposit',
+  Funded: 'amounts',
+  Distributed: 'prove',
+};
 
 export function EmployerPage() {
-  const { sdk, explorerUrl } = useEclipseRuntime();
-  const wallet = useWalletSession((s) => s.wallet);
+  const {
+    recipients,
+    deposit,
+    setDeposit,
+    amounts,
+    updateRecipient,
+    updateAmount,
+    addRecipient,
+    createPayroll,
+    fundPayroll,
+    distribute,
+    payroll,
+    stage,
+    operation,
+    notice,
+    activeRecipients,
+    wallet,
+    explorerUrl,
+  } = useEmployerFlow();
 
-  const [step, setStep] = useState<WizardStep>('recipients');
-  const [payroll, setPayroll] = useState<Payroll | null>(null);
-  const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  const [recipients, setRecipients] = useState<string[]>(['']);
-  const [deposit, setDeposit] = useState('100');
-  /** Private amounts — cleared after successful distribute. Never persisted. */
-  const [amounts, setAmounts] = useState<string[]>(['']);
-
-  function setError(kind: EclipseErrorKind | null, message: string | null = null) {
-    setErrorKind(kind);
-    setErrorMessage(message);
-  }
-
-  function updateRecipient(i: number, v: string) {
-    setRecipients((prev) => {
-      const next = [...prev];
-      next[i] = v;
-      return next;
-    });
-  }
-
-  function updateAmount(i: number, v: string) {
-    setAmounts((prev) => {
-      const next = [...prev];
-      next[i] = v;
-      return next;
-    });
-  }
-
-  async function runCreate() {
-    const errMsg = validateRecipients(recipients);
-    if (errMsg) {
-      setError('CircuitRejected', errMsg);
-      return;
-    }
-    if (!wallet.connected) {
-      setError('WalletNotConnected', 'Connect Lace first');
-      return;
-    }
-    setBusy('Creating payroll…');
-    setError(null);
-    const res = await sdk.eclipse.createPayroll(recipients.map((r) => r.trim()).filter(Boolean));
-    setBusy(null);
-    if (!res.ok) {
-      setError(res.error.kind, describeError(res.error));
-      return;
-    }
-    setPayroll(res.value);
-    setStep('deposit');
-  }
-
-  async function runFund() {
-    if (!wallet.connected) {
-      setError('WalletNotConnected', 'Connect Lace first');
-      return;
-    }
-    let amount: bigint;
-    try {
-      amount = BigInt(deposit.trim());
-    } catch {
-      setError('CircuitRejected', 'Invalid deposit');
-      return;
-    }
-    setBusy('Depositing tNIGHT…');
-    setError(null);
-    const res = await sdk.eclipse.fund(amount);
-    setBusy(null);
-    if (!res.ok) {
-      setError(res.error.kind, describeError(res.error));
-      return;
-    }
-    setPayroll(res.value);
-    const n = recipients.filter((r) => r.trim()).length;
-    setAmounts(Array.from({ length: n }, () => ''));
-    setStep('amounts');
-  }
-
-  async function runDistribute() {
-    if (!wallet.connected) {
-      setError('WalletNotConnected', 'Connect Lace first');
-      return;
-    }
-    const { error, parsed } = validateAmounts(amounts, deposit);
-    if (error) {
-      setError('CircuitRejected', error);
-      return;
-    }
-
-    // MidnightAdapter.distribute() runs its own proof-server health check and
-    // returns that typed failure directly — no separate pre-flight call here.
-    setBusy('Proving & distributing…');
-    setError(null);
-    const res = await sdk.eclipse.distribute(parsed);
-    setBusy(null);
-    if (!res.ok) {
-      setError(res.error.kind, describeError(res.error));
-      return;
-    }
-    setPayroll(res.value);
-    setAmounts([]);
-    setStep('prove');
-  }
-
-  const activeRecipients = recipients.filter((r) => r.trim());
+  const currentStep = STAGE_TO_STEP[stage];
 
   return (
     <section>
@@ -133,26 +43,30 @@ export function EmployerPage() {
 
       <div className="mb-8 flex flex-wrap gap-2">
         {(['recipients', 'deposit', 'amounts', 'prove'] as const).map((s) => (
-          <Pill key={s} active={step === s}>
+          <Pill key={s} active={currentStep === s}>
             {s}
           </Pill>
         ))}
       </div>
 
-      {busy ? (
+      {operation ? (
         <p className="mb-4 text-sm text-[var(--eclipse-accent)]" role="status">
-          {busy}
+          {operation === 'create'
+            ? 'Creating payroll…'
+            : operation === 'fund'
+              ? 'Depositing tNIGHT…'
+              : 'Proving & distributing…'}
         </p>
       ) : null}
-      {errorKind ? (
+
+      {notice ? (
         <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
-          {errorKind}
-          {errorMessage ? `: ${errorMessage}` : ''}
+          {notice.kind}: {notice.message}
         </p>
       ) : null}
 
       <AnimatePresence mode="wait">
-        {step === 'recipients' ? (
+        {currentStep === 'recipients' ? (
           <motion.div
             key="recipients"
             initial={{ opacity: 0, y: 8 }}
@@ -175,7 +89,7 @@ export function EmployerPage() {
                   <button
                     type="button"
                     className="text-sm text-[var(--eclipse-ink-muted)] underline"
-                    onClick={() => setRecipients((p) => [...p, ''])}
+                    onClick={addRecipient}
                   >
                     Add recipient
                   </button>
@@ -183,8 +97,8 @@ export function EmployerPage() {
                 <div className="ml-auto">
                   <Button
                     testId="create-payroll"
-                    disabled={!wallet.connected}
-                    onClick={() => void runCreate()}
+                    disabled={!wallet.connected || operation !== null}
+                    onClick={() => void createPayroll()}
                   >
                     Create payroll
                   </Button>
@@ -194,7 +108,7 @@ export function EmployerPage() {
           </motion.div>
         ) : null}
 
-        {step === 'deposit' ? (
+        {currentStep === 'deposit' ? (
           <motion.div
             key="deposit"
             initial={{ opacity: 0, y: 8 }}
@@ -215,14 +129,18 @@ export function EmployerPage() {
                 Lace moves this much tNIGHT into the contract. The deposit total is public by
                 design; individual amounts stay private.
               </p>
-              <Button testId="fund-payroll" onClick={() => void runFund()}>
+              <Button
+                testId="fund-payroll"
+                disabled={operation !== null}
+                onClick={() => void fundPayroll()}
+              >
                 Deposit tNIGHT
               </Button>
             </Card>
           </motion.div>
         ) : null}
 
-        {step === 'amounts' ? (
+        {currentStep === 'amounts' ? (
           <motion.div
             key="amounts"
             initial={{ opacity: 0, y: 8 }}
@@ -245,14 +163,18 @@ export function EmployerPage() {
                   />
                 </label>
               ))}
-              <Button testId="distribute" onClick={() => void runDistribute()}>
+              <Button
+                testId="distribute"
+                disabled={operation !== null}
+                onClick={() => void distribute()}
+              >
                 Prove &amp; distribute
               </Button>
             </Card>
           </motion.div>
         ) : null}
 
-        {step === 'prove' && payroll ? (
+        {currentStep === 'prove' && payroll ? (
           <motion.div
             key="prove"
             data-testid="distribute-success"
@@ -273,20 +195,6 @@ export function EmployerPage() {
             >
               Open Preprod explorer
             </a>
-            <button
-              type="button"
-              className="block text-sm text-[var(--eclipse-ink-muted)] underline"
-              onClick={() => {
-                setStep('recipients');
-                setBusy(null);
-                setError(null);
-                setRecipients(['']);
-                setAmounts(['']);
-                setPayroll(null);
-              }}
-            >
-              Start over
-            </button>
           </motion.div>
         ) : null}
       </AnimatePresence>

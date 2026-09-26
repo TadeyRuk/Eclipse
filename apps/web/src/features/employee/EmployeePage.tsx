@@ -1,13 +1,7 @@
-import { describeError } from '../lib/describeError';
-import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CircleCheck } from 'lucide-react';
-import type { ClaimableReceipt, EclipseErrorKind, Payroll } from '@eclipse/sdk';
-import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
-import { useWalletSession } from '../shared/runtime/useWalletSession';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Tag } from '../components/ui/Tag';
+import { Card, Button, Tag } from '../../shared/ui';
+import { useClaims } from './useClaims';
 
 /**
  * Employee view — claim a slot without revealing its amount.
@@ -17,45 +11,14 @@ import { Tag } from '../components/ui/Tag';
  * entitlement, and showing the figure here would undercut the claim the demo makes.
  */
 export function EmployeePage() {
-  const { sdk, contractAddress } = useEclipseRuntime();
-  const wallet = useWalletSession((s) => s.wallet);
-  const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  const [payroll, setPayroll] = useState<Payroll | null>(null);
-  const [receipts, setReceipts] = useState<ClaimableReceipt[]>([]);
-
-  const refresh = useCallback(async () => {
-    const res = await sdk.eclipse.getPublicPayroll();
-    if (res.ok) setPayroll(res.value);
-
-    const claimable = await sdk.eclipse.listClaimableReceipts();
-    if (claimable.ok) setReceipts(claimable.value);
-  }, [sdk]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  async function runClaim(slot: number) {
-    if (!wallet.connected) {
-      setErrorKind('WalletNotConnected');
-      setErrorMessage('Connect Lace first');
-      return;
-    }
-    setBusy(`Proving claim for slot ${slot}…`);
-    setErrorKind(null);
-    setErrorMessage(null);
-    const res = await sdk.eclipse.claim(slot);
-    setBusy(null);
-    if (!res.ok) {
-      setErrorKind(res.error.kind);
-      setErrorMessage(describeError(res.error));
-      return;
-    }
-    await refresh();
-  }
+  const {
+    payroll,
+    claims,
+    operation,
+    notice,
+    claim,
+    contractAddress,
+  } = useClaims();
 
   const distributed = payroll?.status === 'Distributed';
 
@@ -72,15 +35,15 @@ export function EmployeePage() {
         Contract: {contractAddress}
       </p>
 
-      {busy ? (
+      {operation ? (
         <p className="mb-4 text-sm text-[var(--eclipse-accent)]" role="status">
-          {busy}
+          {operation}
         </p>
       ) : null}
-      {errorKind ? (
+
+      {notice ? (
         <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
-          {errorKind}
-          {errorMessage ? `: ${errorMessage}` : ''}
+          {notice.kind}: {notice.message}
         </p>
       ) : null}
 
@@ -89,7 +52,7 @@ export function EmployeePage() {
           Nothing to claim yet — the payroll must be distributed first. Current status:{' '}
           {payroll?.status ?? 'loading…'}
         </Card>
-      ) : receipts.length === 0 ? (
+      ) : claims.length === 0 ? (
         <Card testId="employee-no-receipts" className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">
           No local receipt found. Receipt openings are stored privately on the device that ran
           distribute — without the salt, a slot cannot be claimed. This is the intended failure
@@ -97,7 +60,7 @@ export function EmployeePage() {
         </Card>
       ) : (
         <ul className="space-y-3" data-testid="employee-receipts">
-          {receipts.map((r, i) => {
+          {claims.map((r, i) => {
             const alreadyClaimed = payroll?.claimed[r.slot] === true;
             return (
               <motion.li
@@ -127,8 +90,8 @@ export function EmployeePage() {
                     <Button
                       testId={`claim-${r.slot}`}
                       variant="secondary"
-                      disabled={busy !== null}
-                      onClick={() => void runClaim(r.slot)}
+                      disabled={operation !== null}
+                      onClick={() => void claim(r.slot)}
                     >
                       Claim
                     </Button>

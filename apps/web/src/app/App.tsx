@@ -1,9 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { EclipseRuntimeProvider, type EclipseRuntime } from '../shared/runtime/EclipseRuntime';
 import { AppShell } from './AppShell';
-import { EmployerPage } from '../pages/EmployerPage';
-import { ObserverPage } from '../pages/ObserverPage';
-import { EmployeePage } from '../pages/EmployeePage';
+import { EmployerPage } from '../features/employer';
+import { ObserverPage } from '../features/observer';
+import { EmployeePage } from '../features/employee';
 
 export function App({ runtime }: { runtime: EclipseRuntime }) {
   return (

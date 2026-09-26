@@ -1,13 +1,10 @@
-import { describeError } from '../lib/describeError';
+import { describeError } from '../shared/lib/describeError';
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { EclipseErrorKind } from '@eclipse/sdk';
 import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
 import { useWalletSession } from '../shared/runtime/useWalletSession';
-import { Button } from '../components/ui/Button';
-import { Pill } from '../components/ui/Pill';
-import { GradientField } from '../components/ui/GradientField';
-import { Tag } from '../components/ui/Tag';
+import { Button, Pill, GradientField, Tag } from '../shared/ui';
 
 const ROUTES = [
   { to: '/employer', label: 'Employer' },
