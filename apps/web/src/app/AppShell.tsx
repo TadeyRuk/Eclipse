@@ -1,10 +1,12 @@
 import { describeError } from '../shared/lib/describeError';
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import type { EclipseErrorKind } from '@eclipse/sdk';
 import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
 import { useWalletSession } from '../shared/runtime/useWalletSession';
 import { Button, Pill, GradientField, Tag } from '../shared/ui';
+import { motionTokens } from '../shared/motion/tokens';
 
 const ROUTES = [
   { to: '/employer', label: 'Employer' },
@@ -19,6 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const setWallet = useWalletSession((s) => s.setWallet);
   const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [walletNotice, setWalletNotice] = useState<string | null>(null);
 
   // The wallet port may already be connected (a persisted Lace session, or a
   // test fixture wired connected). Seed the shared store from it once per
@@ -32,16 +35,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!res.ok) {
       setErrorKind(res.error.kind);
       setErrorMessage(describeError(res.error));
+      setWalletNotice(null);
       return;
     }
     setErrorKind(null);
     setErrorMessage(null);
     setWallet(res.value);
+    setWalletNotice('Lace connected');
   }
 
   async function onDisconnect() {
     await sdk.wallet.disconnect();
     setWallet({ connected: false, address: null });
+    setErrorKind(null);
+    setErrorMessage(null);
+    setWalletNotice('Lace disconnected');
   }
 
   return (
@@ -55,16 +63,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <h1 className="display text-4xl text-[var(--eclipse-ink-on-field)]">
               Private payroll
             </h1>
-            {/* Always visible — never gated by `debug` — so demo state is never mistaken
-                for a real chain transaction. */}
             <span data-testid="mode-indicator">
               <Tag tone={mode === 'demo' ? 'accent' : 'default'}>
-                {mode === 'demo' ? 'Demo mode' : 'Chain mode'}
+                {mode === 'demo' ? 'Demo mode' : 'Preprod chain'}
               </Tag>
             </span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <motion.div
+          layout
+          transition={motionTokens.spring}
+          className="flex flex-col items-end gap-2"
+        >
           {wallet.connected ? (
             <>
               <p className="max-w-[14rem] truncate font-mono text-xs text-[var(--eclipse-ink-muted)]">
@@ -79,14 +89,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               Connect Lace
             </Button>
           )}
-        </div>
+        </motion.div>
       </header>
 
       <nav className="mb-8 flex gap-1 rounded-full bg-[var(--eclipse-surface)]/10 p-1">
         {ROUTES.map(({ to, label }) => (
           <NavLink key={to} to={to} className="flex-1">
             {({ isActive }) => (
-              <Pill active={isActive} className="w-full justify-center">
+              <Pill
+                active={isActive}
+                layoutId="nav-pill"
+                className="w-full justify-center"
+              >
                 {label}
               </Pill>
             )}
@@ -94,6 +108,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         ))}
       </nav>
 
+      {walletNotice ? (
+        <p className="mb-4 text-sm text-[var(--eclipse-accent)]" role="status">
+          {walletNotice}
+        </p>
+      ) : null}
       {errorKind ? (
         <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
           {errorKind}
