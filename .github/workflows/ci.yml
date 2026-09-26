@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   verify:
-    name: typecheck · test · build
+    name: boundaries · typecheck · test · build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -30,6 +30,9 @@ jobs:
       # locally by design; nothing here touches the network.
       - name: Install dependencies
         run: npm ci
+      - name: Architecture boundaries
+        run: npm run check:boundaries
+
 
       - name: Typecheck
         run: npm run typecheck

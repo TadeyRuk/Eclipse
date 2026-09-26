@@ -11,7 +11,8 @@
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "check:privacy": "node scripts/check-privacy-doc.mjs"
+    "check:privacy": "node scripts/check-privacy-doc.mjs",
+    "check:boundaries": "node scripts/check-boundaries.mjs"
   },
   "engines": {
     "node": ">=22"
