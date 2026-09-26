@@ -20,6 +20,7 @@ docs/evidence/l3-video/out/
 CLAUDE.md
 .claude/
 .remember/
+.worktrees/
 
 # Publish curated docs; keep mid-flight / program dumps local
 docs/*
