@@ -38,8 +38,11 @@ function createEmptyPayroll(): Payroll {
  */
 export function createFakeRuntime({
   connected = true,
-}: { connected?: boolean } = {}): EclipseRuntime {
-  let payroll = createEmptyPayroll();
+  initialPayroll,
+}: { connected?: boolean; initialPayroll?: Payroll } = {}): EclipseRuntime {
+  // structuredClone: callers may reuse a shared fixture (e.g. distributedPayrollFixture)
+  // across tests; mutating the runtime's own copy must never leak back into it.
+  let payroll = initialPayroll ? structuredClone(initialPayroll) : createEmptyPayroll();
   const claims: ClaimableReceipt[] = [];
   let walletState: WalletState = {
     connected,

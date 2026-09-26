@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { App } from '../app/App';
-import { createFakeRuntime } from '../test/createFakeRuntime';
+import { createFakeRuntime, distributedPayrollFixture } from '../test/createFakeRuntime';
 import type { EclipseRuntime } from '../shared/runtime/EclipseRuntime';
 import { validateAmounts, validateRecipients } from '../lib/validate';
 
@@ -91,10 +91,21 @@ describe('employee claim', () => {
   });
 
   it('shows the intended failure mode when no local receipt exists', async () => {
-    // A fresh runtime has no stored openings, so nothing is claimable.
-    renderApp(createFakeRuntime(), '/employee');
-    await waitFor(() => expect(screen.getByTestId('employee-page')).toBeInTheDocument());
-    expect(screen.queryByTestId('employee-receipts')).not.toBeInTheDocument();
+    // A payroll already distributed by another device — this wallet holds no local
+    // receipt opening for it, so nothing is claimable. The safe failure mode, not a bug.
+    renderApp(createFakeRuntime({ initialPayroll: distributedPayrollFixture }), '/employee');
+    await waitFor(() => expect(screen.getByTestId('employee-no-receipts')).toBeInTheDocument());
+    expect(screen.getByText(/No local receipt found/i)).toBeInTheDocument();
+  });
+});
+
+describe('mode indicator', () => {
+  it('labels demo mode even when debug is off', async () => {
+    const runtime = createFakeRuntime();
+    expect(runtime.debug).toBe(false);
+    renderApp(runtime, '/employer');
+    await waitFor(() => expect(screen.getByTestId('mode-indicator')).toBeInTheDocument());
+    expect(screen.getByTestId('mode-indicator')).toHaveTextContent(/demo/i);
   });
 });
 

@@ -7,6 +7,7 @@ import { useWalletSession } from '../shared/runtime/useWalletSession';
 import { Button } from '../components/ui/Button';
 import { Pill } from '../components/ui/Pill';
 import { GradientField } from '../components/ui/GradientField';
+import { Tag } from '../components/ui/Tag';
 
 const ROUTES = [
   { to: '/employer', label: 'Employer' },
@@ -53,9 +54,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--eclipse-ink-muted)]">
             Eclipse
           </p>
-          <h1 className="display mt-1 text-4xl text-[var(--eclipse-ink-on-field)]">
-            Private payroll
-          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <h1 className="display text-4xl text-[var(--eclipse-ink-on-field)]">
+              Private payroll
+            </h1>
+            {/* Always visible — never gated by `debug` — so demo state is never mistaken
+                for a real chain transaction. */}
+            <span data-testid="mode-indicator">
+              <Tag tone={mode === 'demo' ? 'accent' : 'default'}>
+                {mode === 'demo' ? 'Demo mode' : 'Chain mode'}
+              </Tag>
+            </span>
+          </div>
         </div>
         <div className="flex flex-col items-end gap-2">
           {wallet.connected ? (
