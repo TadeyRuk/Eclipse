@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { getPublicStates } from '@midnight-ntwrk/midnight-js-contracts';
 import { ok, err } from '../src/types/result';
 import { MAX_RECIPIENTS } from '../src/types/domain';
 import { ProofClient } from '../src/proof/ProofClient';
@@ -15,7 +16,14 @@ import {
   MidnightAdapter,
 } from '../src/contract/MidnightAdapter';
 import { createEclipseSdk } from '../src/createEclipseSdk';
+import { createBrowserEclipseSdk } from '../src/createBrowserEclipseSdk';
 import type { WalletPort, WalletState } from '../src/wallet/WalletPort';
+
+vi.mock('@midnight-ntwrk/midnight-js-contracts', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@midnight-ntwrk/midnight-js-contracts')>();
+  return { ...actual, getPublicStates: vi.fn(actual.getPublicStates) };
+});
 
 function mockWallet(connected = true): WalletPort {
   const state: WalletState = {
@@ -334,5 +342,42 @@ describe('createEclipseSdk', () => {
     expect(sdk.wallet).toBeDefined();
     expect(sdk.eclipse).toBeDefined();
     expect(sdk.proof).toBeInstanceOf(ProofClient);
+  });
+});
+
+describe('createBrowserEclipseSdk', () => {
+  afterEach(() => {
+    vi.mocked(getPublicStates).mockClear();
+  });
+
+  it('provides an empty public ledger only in explicit demo mode', async () => {
+    const sdk = createBrowserEclipseSdk({
+      mode: 'demo',
+      contractAddress: 'abc',
+      network: 'preprod',
+      proofServerUrl: 'http://127.0.0.1:6300',
+      zkAssetBaseUrl: '/zk/eclipse',
+      loadContractModule: async () => ({ Contract: {}, ledger: () => ({}) }),
+    });
+
+    await expect(sdk.eclipse.getPublicPayroll()).resolves.toMatchObject({
+      ok: true,
+      value: { status: 'Uninitialized' },
+    });
+  });
+
+  it('does not replace a failed chain read with demo state', async () => {
+    vi.mocked(getPublicStates).mockRejectedValueOnce(new Error('indexer offline'));
+    const sdk = createBrowserEclipseSdk({
+      mode: 'chain',
+      contractAddress: 'abc',
+      network: 'preprod',
+      proofServerUrl: 'http://127.0.0.1:6300',
+      zkAssetBaseUrl: '/zk/eclipse',
+      loadContractModule: async () => ({ Contract: {}, ledger: () => ({}) }),
+    });
+
+    const result = await sdk.eclipse.getPublicPayroll();
+    expect(result.ok).toBe(false);
   });
 });

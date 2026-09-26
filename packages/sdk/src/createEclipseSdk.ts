@@ -7,8 +7,7 @@ import {
 } from './contract/MidnightAdapter';
 import type { WalletPort } from './wallet/WalletPort';
 import type { EclipsePort } from './contract/EclipsePort';
-
-export type EclipseSdkNetwork = 'preprod' | 'preview' | 'undeployed';
+import type { EclipseSdkNetwork } from './types/EclipseSdkNetwork';
 
 export interface EclipseSdkConfig {
   proofServerUrl?: string;

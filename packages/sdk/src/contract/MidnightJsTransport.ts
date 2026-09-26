@@ -23,6 +23,7 @@ import {
   mapLedgerLikeToPayroll,
   type EclipseCircuitTransport,
 } from './MidnightAdapter';
+import type { ContractModuleLoader } from './ContractModuleLoader';
 
 const PRIVATE_STATE_ID = 'EclipseBrowserPrivateState';
 const STATUS_NAMES: PayrollStatus[] = [
@@ -36,12 +37,6 @@ const PREPROD = {
   indexer: 'https://indexer.preprod.midnight.network/api/v4/graphql',
   indexerWS: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
 };
-
-// The generated module is typed per contract; the transport only needs these two exports.
-export type ContractModuleLoader = () => Promise<{
-  Contract: unknown;
-  ledger: (data: unknown) => Record<string, unknown>;
-}>;
 
 export type MidnightJsTransportConfig = {
   contractAddress: string;
