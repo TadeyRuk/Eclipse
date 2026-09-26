@@ -150,7 +150,7 @@ flowchart LR
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | [`contracts/`](contracts)             | Compact contract (`src/eclipse.compact`), compiled circuits and keys (`managed/`), deploy and lifecycle scripts |
 | [`packages/sdk/`](packages/sdk)       | The only layer that touches Midnight.js or the wallet: ports, adapters, `Result` error taxonomy                 |
-| [`apps/web/`](apps/web)               | Role-scoped React UI; codes against SDK ports only                                                              |
+| [`apps/web/`](apps/web)               | Role-owned React features; one composition module injects SDK ports, and CI enforces import direction.                                                              |
 | [`packages/config/`](packages/config) | Shared strict `tsconfig` and prettier config                                                                    |
 
 ## Data flow
@@ -300,12 +300,12 @@ npm test
 | Workspace      | Tests | Covers                                                                                                                                                                           |
 | -------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `contracts`    | 20    | Sum-proof rejections, exact tNIGHT deposit, lifecycle ordering, claim (wrong amount, wrong salt, impostor key, double claim all rejected), ledger exposes only documented fields |
-| `@eclipse/sdk` | 17    | `Result` mapping, salts, proof-server loopback, mock-port adapters, receipt storage, claim path                                                                                  |
-| `@eclipse/web` | 16    | Amounts wiped after distribute, claim never renders the amount, observer has no amount fields, UI primitives                                                                     |
+| `@eclipse/sdk` | 19    | `Result` mapping, salts, proof-server loopback, mock-port adapters, receipt storage, claim path, explicit demo mode and no-fallback chain selection                                 |
+| `@eclipse/web` | 20    | Amounts wiped after distribute, claim never renders the amount, observer has no amount fields, proof ceremony, shell motion, UI primitives                                          |
 
 [`ci.yml`](.github/workflows/ci.yml) runs on every push and pull request to `main`:
 
-- **typecheck · test · build**, then `npm run check:privacy`, which fails if any `export ledger` field or `export circuit` is missing from [docs/privacy-model.md](docs/privacy-model.md).
+- **boundaries · typecheck · test · build**, then `npm run check:privacy`, which fails if any `export ledger` field or `export circuit` is missing from [docs/privacy-model.md](docs/privacy-model.md).
 - **compiled circuit matches source**: recompiles with the pinned Compact compiler (0.31.1) and fails if the committed `contracts/managed/` differs, so the circuits the tests exercise and the app serves are provably this source.
 
 ## Evidence

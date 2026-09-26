@@ -46,21 +46,22 @@ eclipse/
 │   ├── managed/                # generated: circuits + keys (committed snapshot; CI regenerates & diffs)
 │   └── tests/                  # contract-level tests
 ├── apps/
-│   └── web/                    # React frontend (single app, role-based views)
+│   └── web/                    # React frontend (feature-owned modules)
 │       ├── src/
-│       │   ├── views/
-│       │   │   ├── employer/   # create payroll, add recipients, distribute
-│       │   │   └── employee/   # view own payment, claim
-│       │   ├── components/     # shared presentational components
-│       │   └── state/          # app state (see §5)
-│       └── tests/
+│       │   ├── app/            # App, AppShell, composition (wiring root)
+│       │   ├── features/       # Role-scoped modules with local hooks and public roots
+│       │   │   ├── employer/   # EmployerPage, useEmployerFlow, LifecycleRail, ProofChamber
+│       │   │   ├── observer/   # ObserverPage, usePublicPayroll
+│       │   │   └── employee/   # EmployeePage, useClaims
+│       │   └── shared/         # runtime (injected ports), motion, ui, lib
+│       └── test/               # test utilities and fake runtime
 ├── packages/
 │   ├── sdk/                    # Eclipse SDK — THE adapter layer (see §4)
 │   │   ├── src/
 │   │   │   ├── wallet/         # Lace / DApp-connector adapter
 │   │   │   ├── contract/       # typed circuit-call wrappers
 │   │   │   ├── proof/          # proof-server client adapter
-│   │   │   ├── createEclipseSdk.ts  # factory (wiring only)
+│   │   │   ├── createBrowserEclipseSdk.ts # deep browser factory (wiring only)
 │   │   │   └── types/          # shared domain types (Payroll, Recipient, Receipt)
 │   │   └── tests/
 │   └── config/                 # shared tsconfig / eslint / prettier presets
@@ -81,8 +82,8 @@ Rules:
 | **Contract** | Ledger schema, lifecycle guards, ZK invariants, commitment math | Import SDK/app; call wallet; UI strings |
 | **SDK ports** | Stable async API, `Result<T>`, domain types | Import Midnight.js / `window.midnight` |
 | **SDK adapters** | Wire format mapping, timeouts, version pins | Business logic duplicated from contract |
-| **App views** | UX, loading/error states, route layout | Direct Midnight.js; thrown exceptions from SDK |
-| **App state** | Wallet session, active payroll id, last SDK error code | Amount witnesses, salts, proof payloads |
+| **App views** | UX, loading/error states, feature workflows | Direct Midnight.js; thrown exceptions from SDK |
+| **App state** | Injected wallet session, feature-local flow hooks | Amount witnesses, salts, proof payloads |
 
 **Rule:** Each layer is testable without the layer above. Contract tests need no browser; SDK tests mock ports; app tests mock `EclipsePort` / `WalletPort`.
 
@@ -201,18 +202,23 @@ Purpose: isolate every external dependency behind an interface the app owns. Mid
 
 ```
 packages/sdk/src/
-├── createEclipseSdk.ts      # factory — only wiring file
+├── createBrowserEclipseSdk.ts   # deep factory — only browser wiring file
 ├── wallet/
-│   ├── WalletPort.ts        # interface: connect(), disconnect(), sign(), state()
-│   └── LaceAdapter.ts       # only file that touches window.midnight / DApp connector
+│   ├── WalletPort.ts            # interface: connect(), disconnect(), sign(), state()
+│   └── LaceAdapter.ts           # only file that touches window.midnight / DApp connector
 ├── contract/
-│   ├── EclipsePort.ts       # interface: createPayroll(), fund(), distribute(), claim()
-│   └── MidnightAdapter.ts   # only file that imports Midnight.js; implements EclipsePort
+│   ├── EclipsePort.ts           # interface: createPayroll(), fund(), distribute(), claim(), listClaimableReceipts()
+│   ├── ContractModuleLoader.ts  # loader type contract
+│   ├── MidnightAdapter.ts       # only file that imports Midnight.js; implements EclipsePort
+│   └── MidnightJsTransport.ts   # browser Midnight.js circuit transport and indexer reader
 ├── proof/
-│   └── ProofClient.ts       # local proof-server transport, health check, timeout policy
+│   └── ProofClient.ts           # local proof-server transport, health check, timeout policy
+├── private/
+│   ├── ReceiptStorePort.ts      # private receipt storage port
+│   └── MemoryReceiptStore.ts    # default in-memory opening store
 ├── internal/
-│   └── safeAsync.ts         # try/catch → Result helper (adapters only)
-└── types/                   # Payroll, Recipient, Receipt, Result, MAX_RECIPIENTS
+│   └── safeAsync.ts             # try/catch → Result helper (adapters only)
+└── types/                       # Payroll, Recipient, ClaimableReceipt, Result, MAX_RECIPIENTS
 ```
 
 ### 4.1 Ports vs adapters
@@ -230,10 +236,17 @@ MidnightAdapter receives `ProofClient` + `WalletPort` via **constructor injectio
 ### 4.2 Factory
 
 ```ts
-export interface EclipseSdkConfig {
-  proofServerUrl: string;       // default http://127.0.0.1:6300
-  contractAddress: string;      // from env, never hardcoded in app
-  network: 'preprod' | 'local';
+export type BrowserEclipseSdkMode = 'demo' | 'chain';
+
+export interface BrowserEclipseSdkConfig {
+  mode: BrowserEclipseSdkMode;
+  contractAddress: string;
+  network: EclipseSdkNetwork;
+  proofServerUrl: string;
+  zkAssetBaseUrl: string;
+  loadContractModule: ContractModuleLoader;
+  allowRemoteProofServer?: boolean;
+  proofTimeoutMs?: number;
 }
 
 export interface EclipseSdk {
@@ -241,11 +254,16 @@ export interface EclipseSdk {
   eclipse: EclipsePort;
 }
 
-export function createEclipseSdk(config: EclipseSdkConfig): EclipseSdk { /* wire adapters */ }
+export function createBrowserEclipseSdk(config: BrowserEclipseSdkConfig): EclipseSdk { /* wire adapters */ }
 ```
 
-App imports **`createEclipseSdk` + port types only** — never adapter classes. Unit tests inject mocks; Gate 2 integration may use real Lace + proof-server.
+App imports **`createBrowserEclipseSdk` + port types only** — never adapter classes. Unit tests inject fake ports; Gate 2 integration may use real Lace + proof-server.
 
+Safe claim metadata is exposed via:
+```ts
+listClaimableReceipts(): Promise<Result<ClaimableReceipt[]>>
+```
+which returns `{ slot, recipient }` without disclosing private `amount` or `salt`.
 ### 4.3 Domain types (align when adapters land)
 
 In `packages/sdk/src/types/domain.ts` (ports already exist; update when implementing):
@@ -304,14 +322,15 @@ UI maps **`kind` only**. Never log amounts or witnesses.
 
 ## 5. Frontend (apps/web)
 
-- **Stack:** React 18 + Vite + TypeScript (strict) + Tailwind.
-- **State:** local component state + thin Zustand store for session (wallet, active payroll, last error `kind`). No server state library — chain + SDK is the backend.
-- **Views:** `/employer/*` and `/employee/*`. Wallet identity is auth.
-- **Rendering rule:** SDK only from explicit user actions → typed result → store update. Never during render.
+- **Stack:** React 19 + Vite + TypeScript (strict) + Tailwind + Framer Motion.
+- **Architecture:** Feature-owned modules (`features/employer`, `features/observer`, `features/employee`). App and shell live in `app/`. Composition root (`app/composition.ts`) creates the SDK runtime once and provides ports via `EclipseRuntimeProvider`.
+- **State:** Injected `WalletPort` and `EclipsePort`. Thin Zustand store for wallet connection only (`useWalletSession`). Payroll data, lifecycle stage, operations, and error notices are feature-local hooks (`useEmployerFlow`, `usePublicPayroll`, `useClaims`).
+- **Stage machine:** Employer stage is derived from contract truth (`payroll?.status ?? 'draft'`), enforcing `draft → Created → Funded → Distributed`.
+- **Proof ceremony:** Accessible, domain-specific proof chamber (`ProofChamber.tsx`) animating 8 fixed recipient slots toward an eclipse halo without touching private amount data. Respects `prefers-reduced-motion`.
+- **Rendering rule:** SDK only from explicit user actions → typed result → state update. Never during render.
 - **Pre-validation:** amounts length ≤ 8, sum preview — app-side before SDK call.
 - **Debug:** `VITE_DEBUG=1` footer shows error `kind` / message / proof-server health — **never** amounts or salts.
-- **Post-L1:** pre-flight `ProofClient.healthCheck()` on distribute screen.
-
+- **Mode indicator:** Always-visible "Demo mode" / "Preprod chain" tag in the shell header.
 ---
 
 ## 6. Security & Privacy Model (first-class)
@@ -354,8 +373,8 @@ GitHub Actions, three workflows. **Not required to file L1** (Midnight requires 
 | Gate | Fails on |
 |---|---|
 | Install (`npm ci`) | Lockfile drift |
+| Boundaries | Static import rule check (`npm run check:boundaries`) |
 | Typecheck | Any `tsc` error |
-| Lint + prettier | Style or import-boundary violation |
 | Contract compile | Circuit does not build |
 | Managed-artifact check | Regenerated `managed/` ≠ committed snapshot |
 | Tests | Contract / SDK / app failures |
@@ -395,7 +414,7 @@ Minimum bar: Gate 0 sum invariants are non-negotiable — they ARE the product's
 | No `any` | Inline `// justify:` comment required |
 | Formatting | Prettier (`packages/config/prettier.base.json`); CI `--check` |
 | Lint | Shared ESLint; warnings-as-errors for SDK + app |
-| Import boundaries | `apps/web` must not import `@midnight/*` or `contracts/` (`no-restricted-imports`) |
+| Import boundaries | `check:boundaries` script; packages never import web; shared never imports app/features; feature internals private |
 | One export per SDK file | Convention + review |
 | Conventional Commits | `feat:`, `fix:`, `test:`, `docs:`, `ci:` |
 | Lockfile | `npm ci` in CI |
