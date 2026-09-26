@@ -41,9 +41,8 @@ program, Level 3 idea #6, _Private Payroll / Splits_.
 | ✅ Four circuits on-chain | `createPayroll` → `fund` → `distribute` → `claim` confirmed on Preprod ([tx ids](docs/evidence/l3-onchain-lifecycle.json)) |
 | ✅ Real token deposit     | `fund` moves real unshielded tNIGHT into the contract                                                                      |
 | ✅ Live demo              | Reads the Preprod ledger; Lace connects on Midnight Preprod                                                                |
-| ✅ Tests + CI             | 53 tests; CI checks types, tests, build, circuit drift, and privacy docs on every push                                     |
+| ✅ Tests + CI             | 59 tests; CI checks boundaries, types, tests, build, circuit drift, and privacy docs on every push                         |
 | ✅ Proposal               | Idea #6 submitted on Rise In, awaiting committee approval ([proposal](docs/proposal.md))                                   |
-| ⏳ Remaining              | One-minute demo recorded against Lace on Preprod; Level 3 filing                                                           |
 
 <details id="progress-gantt">
 <summary><b>Progress (Gantt)</b></summary>
