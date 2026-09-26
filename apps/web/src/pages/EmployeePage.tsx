@@ -2,9 +2,9 @@ import { describeError } from '../lib/describeError';
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CircleCheck } from 'lucide-react';
-import type { Payroll, ReceiptRecord } from '@eclipse/sdk';
-import { getSdk, getContractAddress } from '../sdk';
-import { useSession } from '../state/session';
+import type { ClaimableReceipt, EclipseErrorKind, Payroll } from '@eclipse/sdk';
+import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
+import { useWalletSession } from '../shared/runtime/useWalletSession';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Tag } from '../components/ui/Tag';
@@ -17,25 +17,22 @@ import { Tag } from '../components/ui/Tag';
  * entitlement, and showing the figure here would undercut the claim the demo makes.
  */
 export function EmployeePage() {
-  const wallet = useSession((s) => s.wallet);
-  const setError = useSession((s) => s.setError);
-  const setBusy = useSession((s) => s.setBusy);
-  const busy = useSession((s) => s.busy);
+  const { sdk, contractAddress } = useEclipseRuntime();
+  const wallet = useWalletSession((s) => s.wallet);
+  const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
   const [payroll, setPayroll] = useState<Payroll | null>(null);
-  const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
+  const [receipts, setReceipts] = useState<ClaimableReceipt[]>([]);
 
   const refresh = useCallback(async () => {
-    const sdk = getSdk();
     const res = await sdk.eclipse.getPublicPayroll();
     if (res.ok) setPayroll(res.value);
 
-    // listLocalReceipts is adapter-specific, not part of EclipsePort.
-    const adapter = sdk.eclipse as { listLocalReceipts?: () => Promise<ReceiptRecord[]> };
-    if (adapter.listLocalReceipts) {
-      setReceipts(await adapter.listLocalReceipts());
-    }
-  }, []);
+    const claimable = await sdk.eclipse.listClaimableReceipts();
+    if (claimable.ok) setReceipts(claimable.value);
+  }, [sdk]);
 
   useEffect(() => {
     void refresh();
@@ -43,15 +40,18 @@ export function EmployeePage() {
 
   async function runClaim(slot: number) {
     if (!wallet.connected) {
-      setError('WalletNotConnected', 'Connect Lace first');
+      setErrorKind('WalletNotConnected');
+      setErrorMessage('Connect Lace first');
       return;
     }
     setBusy(`Proving claim for slot ${slot}…`);
-    setError(null);
-    const res = await getSdk().eclipse.claim(slot);
+    setErrorKind(null);
+    setErrorMessage(null);
+    const res = await sdk.eclipse.claim(slot);
     setBusy(null);
     if (!res.ok) {
-      setError(res.error.kind, describeError(res.error));
+      setErrorKind(res.error.kind);
+      setErrorMessage(describeError(res.error));
       return;
     }
     await refresh();
@@ -69,8 +69,20 @@ export function EmployeePage() {
       </p>
 
       <p className="mb-4 font-mono text-xs text-[var(--eclipse-ink-muted)] break-all">
-        Contract: {getContractAddress()}
+        Contract: {contractAddress}
       </p>
+
+      {busy ? (
+        <p className="mb-4 text-sm text-[var(--eclipse-accent)]" role="status">
+          {busy}
+        </p>
+      ) : null}
+      {errorKind ? (
+        <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
+          {errorKind}
+          {errorMessage ? `: ${errorMessage}` : ''}
+        </p>
+      ) : null}
 
       {!distributed ? (
         <Card className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">

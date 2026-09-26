@@ -15,7 +15,6 @@ import {
   InMemoryEclipseTransport,
   MidnightAdapter,
 } from '../src/contract/MidnightAdapter';
-import { createEclipseSdk } from '../src/createEclipseSdk';
 import { createBrowserEclipseSdk } from '../src/createBrowserEclipseSdk';
 import type { WalletPort, WalletState } from '../src/wallet/WalletPort';
 
@@ -328,20 +327,6 @@ describe('claim (private receipt openings)', () => {
       expect(result.value[0]).not.toHaveProperty('amount');
       expect(result.value[0]).not.toHaveProperty('saltHex');
     }
-  });
-});
-
-describe('createEclipseSdk', () => {
-  it('wires wallet + eclipse + proof', () => {
-    const sdk = createEclipseSdk({
-      contractAddress: 'abc',
-      network: 'preprod',
-      wallet: mockWallet(true),
-      transport: new InMemoryEclipseTransport(),
-    });
-    expect(sdk.wallet).toBeDefined();
-    expect(sdk.eclipse).toBeDefined();
-    expect(sdk.proof).toBeInstanceOf(ProofClient);
   });
 });
 

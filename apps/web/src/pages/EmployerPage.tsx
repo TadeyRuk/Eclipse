@@ -1,29 +1,35 @@
 import { describeError } from '../lib/describeError';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MAX_RECIPIENTS } from '@eclipse/sdk';
-import { getSdk, explorerContractUrl } from '../sdk';
-import { useSession } from '../state/session';
+import { MAX_RECIPIENTS, type EclipseErrorKind, type Payroll } from '@eclipse/sdk';
+import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
+import { useWalletSession } from '../shared/runtime/useWalletSession';
 import { validateAmounts, validateRecipients } from '../lib/validate';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Pill } from '../components/ui/Pill';
 
+type WizardStep = 'recipients' | 'deposit' | 'amounts' | 'prove';
+
 export function EmployerPage() {
-  const step = useSession((s) => s.step);
-  const setStep = useSession((s) => s.setStep);
-  const wallet = useSession((s) => s.wallet);
-  const payroll = useSession((s) => s.payroll);
-  const setPayroll = useSession((s) => s.setPayroll);
-  const setError = useSession((s) => s.setError);
-  const setBusy = useSession((s) => s.setBusy);
-  const setProofHealthy = useSession((s) => s.setProofHealthy);
-  const resetFlow = useSession((s) => s.resetFlow);
+  const { sdk, explorerUrl } = useEclipseRuntime();
+  const wallet = useWalletSession((s) => s.wallet);
+
+  const [step, setStep] = useState<WizardStep>('recipients');
+  const [payroll, setPayroll] = useState<Payroll | null>(null);
+  const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
   const [recipients, setRecipients] = useState<string[]>(['']);
   const [deposit, setDeposit] = useState('100');
   /** Private amounts — cleared after successful distribute. Never persisted. */
   const [amounts, setAmounts] = useState<string[]>(['']);
+
+  function setError(kind: EclipseErrorKind | null, message: string | null = null) {
+    setErrorKind(kind);
+    setErrorMessage(message);
+  }
 
   function updateRecipient(i: number, v: string) {
     setRecipients((prev) => {
@@ -53,7 +59,6 @@ export function EmployerPage() {
     }
     setBusy('Creating payroll…');
     setError(null);
-    const sdk = getSdk();
     const res = await sdk.eclipse.createPayroll(recipients.map((r) => r.trim()).filter(Boolean));
     setBusy(null);
     if (!res.ok) {
@@ -78,7 +83,7 @@ export function EmployerPage() {
     }
     setBusy('Depositing tNIGHT…');
     setError(null);
-    const res = await getSdk().eclipse.fund(amount);
+    const res = await sdk.eclipse.fund(amount);
     setBusy(null);
     if (!res.ok) {
       setError(res.error.kind, describeError(res.error));
@@ -101,18 +106,11 @@ export function EmployerPage() {
       return;
     }
 
-    setBusy('Checking proof server…');
-    const health = await getSdk().proof.healthCheck();
-    setProofHealthy(health.ok);
-    if (!health.ok) {
-      setBusy(null);
-      setError(health.error.kind, describeError(health.error));
-      return;
-    }
-
+    // MidnightAdapter.distribute() runs its own proof-server health check and
+    // returns that typed failure directly — no separate pre-flight call here.
     setBusy('Proving & distributing…');
     setError(null);
-    const res = await getSdk().eclipse.distribute(parsed);
+    const res = await sdk.eclipse.distribute(parsed);
     setBusy(null);
     if (!res.ok) {
       setError(res.error.kind, describeError(res.error));
@@ -140,6 +138,18 @@ export function EmployerPage() {
           </Pill>
         ))}
       </div>
+
+      {busy ? (
+        <p className="mb-4 text-sm text-[var(--eclipse-accent)]" role="status">
+          {busy}
+        </p>
+      ) : null}
+      {errorKind ? (
+        <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
+          {errorKind}
+          {errorMessage ? `: ${errorMessage}` : ''}
+        </p>
+      ) : null}
 
       <AnimatePresence mode="wait">
         {step === 'recipients' ? (
@@ -257,7 +267,7 @@ export function EmployerPage() {
             <PublicPayrollCard payroll={payroll} />
             <a
               className="inline-block text-sm text-[var(--eclipse-ink-on-field)] underline"
-              href={explorerContractUrl()}
+              href={explorerUrl}
               target="_blank"
               rel="noreferrer"
             >
@@ -267,7 +277,9 @@ export function EmployerPage() {
               type="button"
               className="block text-sm text-[var(--eclipse-ink-muted)] underline"
               onClick={() => {
-                resetFlow();
+                setStep('recipients');
+                setBusy(null);
+                setError(null);
                 setRecipients(['']);
                 setAmounts(['']);
                 setPayroll(null);
@@ -282,11 +294,7 @@ export function EmployerPage() {
   );
 }
 
-function PublicPayrollCard({
-  payroll,
-}: {
-  payroll: NonNullable<ReturnType<typeof useSession.getState>['payroll']>;
-}) {
+function PublicPayrollCard({ payroll }: { payroll: Payroll }) {
   return (
     <Card testId="public-payroll" className="text-sm">
       <p>

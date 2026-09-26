@@ -2,9 +2,8 @@ import { describeError } from '../lib/describeError';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Wallet } from 'lucide-react';
-import type { Payroll } from '@eclipse/sdk';
-import { getSdk, getContractAddress, explorerContractUrl } from '../sdk';
-import { useSession } from '../state/session';
+import type { EclipseErrorKind, Payroll } from '@eclipse/sdk';
+import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
 import { Card } from '../components/ui/Card';
 import { Tag } from '../components/ui/Tag';
 import { StatChip } from '../components/ui/StatChip';
@@ -14,16 +13,19 @@ import { StatChip } from '../components/ui/StatChip';
  * No amount inputs; proves L2 observable privacy.
  */
 export function ObserverPage() {
-  const setError = useSession((s) => s.setError);
+  const { sdk, contractAddress, explorerUrl } = useEclipseRuntime();
   const [payroll, setPayroll] = useState<Payroll | null>(null);
+  const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const res = await getSdk().eclipse.getPublicPayroll();
+      const res = await sdk.eclipse.getPublicPayroll();
       if (cancelled) return;
       if (!res.ok) {
-        setError(res.error.kind, describeError(res.error));
+        setErrorKind(res.error.kind);
+        setErrorMessage(describeError(res.error));
         return;
       }
       setPayroll(res.value);
@@ -31,7 +33,7 @@ export function ObserverPage() {
     return () => {
       cancelled = true;
     };
-  }, [setError]);
+  }, [sdk]);
 
   return (
     <section data-testid="observer-page">
@@ -42,8 +44,15 @@ export function ObserverPage() {
       </p>
 
       <p className="mb-4 font-mono text-xs text-[var(--eclipse-ink-muted)] break-all">
-        Contract: {getContractAddress()}
+        Contract: {contractAddress}
       </p>
+
+      {errorKind ? (
+        <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
+          {errorKind}
+          {errorMessage ? `: ${errorMessage}` : ''}
+        </p>
+      ) : null}
 
       {!payroll ? (
         <p className="text-sm text-[var(--eclipse-ink-muted)]">Loading public state…</p>
@@ -105,7 +114,7 @@ export function ObserverPage() {
 
       <a
         className="mt-6 inline-block text-sm text-[var(--eclipse-ink-on-field)] underline"
-        href={explorerContractUrl()}
+        href={explorerUrl}
         target="_blank"
         rel="noreferrer"
       >
@@ -116,11 +125,9 @@ export function ObserverPage() {
         type="button"
         className="mt-4 block text-sm text-[var(--eclipse-ink-muted)] underline"
         onClick={() => {
-          void getSdk()
-            .eclipse.getPublicPayroll()
-            .then((res) => {
-              if (res.ok) setPayroll(res.value);
-            });
+          void sdk.eclipse.getPublicPayroll().then((res) => {
+            if (res.ok) setPayroll(res.value);
+          });
         }}
       >
         Refresh

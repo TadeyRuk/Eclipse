@@ -48,7 +48,7 @@ export function createBrowserEclipseSdk(config: BrowserEclipseSdkConfig): Eclips
     transport,
   };
 
-  const eclipse: EclipsePort = new MidnightAdapter(proof, lace, midnightConfig, lace);
+  const eclipse: EclipsePort = new MidnightAdapter(proof, lace, midnightConfig);
 
   return { wallet: lace, eclipse };
 }

@@ -1,27 +1,16 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { ok, type WalletPort, type WalletState } from '@eclipse/sdk';
-import App from '../App';
-import { __resetSdkForTests } from '../sdk';
-import { useSession } from '../state/session';
+import { App } from '../app/App';
+import { createFakeRuntime } from '../test/createFakeRuntime';
+import type { EclipseRuntime } from '../shared/runtime/EclipseRuntime';
 import { validateAmounts, validateRecipients } from '../lib/validate';
 
-function mockWallet(): WalletPort {
-  const state: WalletState = { connected: true, address: 'aa'.repeat(32) };
-  return {
-    connect: async () => ok(state),
-    disconnect: async () => ok(undefined),
-    state: () => state,
-    sign: async (p) => ok(p),
-  };
-}
-
-function renderApp(path = '/employer') {
+function renderApp(runtime: EclipseRuntime, path = '/employer') {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <App />
+      <App runtime={runtime} />
     </MemoryRouter>,
   );
 }
@@ -40,24 +29,10 @@ describe('validate', () => {
 });
 
 describe('employer privacy wipe', () => {
-  beforeEach(() => {
-    useSession.getState().resetFlow();
-    useSession.setState({
-      wallet: { connected: true, address: 'aa'.repeat(32) },
-      payroll: null,
-      lastErrorKind: null,
-      lastErrorMessage: null,
-    });
-    __resetSdkForTests(mockWallet());
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response('ok', { status: 200 })),
-    );
-  });
-
   it('clears amount inputs after successful distribute', async () => {
+    const runtime = createFakeRuntime();
     const user = userEvent.setup();
-    renderApp('/employer');
+    renderApp(runtime, '/employer');
 
     await user.type(screen.getByTestId('recipient-0'), 'bb'.repeat(32));
     await user.click(screen.getByTestId('create-payroll'));
@@ -79,21 +54,6 @@ describe('employer privacy wipe', () => {
 });
 
 describe('employee claim', () => {
-  beforeEach(() => {
-    useSession.getState().resetFlow();
-    useSession.setState({
-      wallet: { connected: true, address: 'aa'.repeat(32) },
-      payroll: null,
-      lastErrorKind: null,
-      lastErrorMessage: null,
-    });
-    __resetSdkForTests(mockWallet());
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response('ok', { status: 200 })),
-    );
-  });
-
   /** Drive the employer flow so a distributed payroll and local receipt exist. */
   async function distributeAs(user: ReturnType<typeof userEvent.setup>) {
     await user.type(screen.getByTestId('recipient-0'), 'bb'.repeat(32));
@@ -109,12 +69,13 @@ describe('employee claim', () => {
   }
 
   it('claims a slot without ever rendering the amount', async () => {
+    const runtime = createFakeRuntime();
     const user = userEvent.setup();
-    const { unmount } = renderApp('/employer');
+    const { unmount } = renderApp(runtime, '/employer');
     await distributeAs(user);
     unmount();
 
-    renderApp('/employee');
+    renderApp(runtime, '/employee');
     await waitFor(() => expect(screen.getByTestId('employee-receipts')).toBeInTheDocument());
 
     // The receipt exists and is claimable, but 100 must not appear anywhere —
@@ -130,20 +91,16 @@ describe('employee claim', () => {
   });
 
   it('shows the intended failure mode when no local receipt exists', async () => {
-    // A fresh SDK has no stored openings, so nothing is claimable.
-    renderApp('/employee');
+    // A fresh runtime has no stored openings, so nothing is claimable.
+    renderApp(createFakeRuntime(), '/employee');
     await waitFor(() => expect(screen.getByTestId('employee-page')).toBeInTheDocument());
     expect(screen.queryByTestId('employee-receipts')).not.toBeInTheDocument();
   });
 });
 
 describe('observer page', () => {
-  beforeEach(() => {
-    __resetSdkForTests(mockWallet());
-  });
-
   it('has no private amount fields', async () => {
-    renderApp('/observer');
+    renderApp(createFakeRuntime(), '/observer');
     await waitFor(() => expect(screen.getByTestId('observer-page')).toBeInTheDocument());
     expect(screen.queryByTestId('amount-0')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Private amount/i)).not.toBeInTheDocument();

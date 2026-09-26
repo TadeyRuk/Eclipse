@@ -1,11 +1,12 @@
 import { describeError } from '../lib/describeError';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { chainModeEnabled, debugEnabled, getContractAddress, getSdk } from '../sdk';
-import { useSession } from '../state/session';
-import { Button } from './ui/Button';
-import { Pill } from './ui/Pill';
-import { GradientField } from './ui/GradientField';
+import type { EclipseErrorKind } from '@eclipse/sdk';
+import { useEclipseRuntime } from '../shared/runtime/EclipseRuntime';
+import { useWalletSession } from '../shared/runtime/useWalletSession';
+import { Button } from '../components/ui/Button';
+import { Pill } from '../components/ui/Pill';
+import { GradientField } from '../components/ui/GradientField';
 
 const ROUTES = [
   { to: '/employer', label: 'Employer' },
@@ -13,28 +14,34 @@ const ROUTES = [
   { to: '/employee', label: 'Employee' },
 ] as const;
 
-export function Shell({ children }: { children: ReactNode }) {
-  const wallet = useSession((s) => s.wallet);
-  const setWallet = useSession((s) => s.setWallet);
-  const setError = useSession((s) => s.setError);
-  const busy = useSession((s) => s.busy);
-  const lastErrorKind = useSession((s) => s.lastErrorKind);
-  const lastErrorMessage = useSession((s) => s.lastErrorMessage);
-  const proofHealthy = useSession((s) => s.proofHealthy);
+/** Owns only wallet connect/disconnect error state; every other error is page-local. */
+export function AppShell({ children }: { children: ReactNode }) {
+  const { sdk, mode, contractAddress, debug } = useEclipseRuntime();
+  const wallet = useWalletSession((s) => s.wallet);
+  const setWallet = useWalletSession((s) => s.setWallet);
+  const [errorKind, setErrorKind] = useState<EclipseErrorKind | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // The wallet port may already be connected (a persisted Lace session, or a
+  // test fixture wired connected). Seed the shared store from it once per
+  // runtime instead of assuming every mount starts disconnected.
+  useEffect(() => {
+    setWallet(sdk.wallet.state());
+  }, [sdk, setWallet]);
 
   async function onConnect() {
-    const sdk = getSdk();
     const res = await sdk.wallet.connect();
     if (!res.ok) {
-      setError(res.error.kind, describeError(res.error));
+      setErrorKind(res.error.kind);
+      setErrorMessage(describeError(res.error));
       return;
     }
-    setError(null);
+    setErrorKind(null);
+    setErrorMessage(null);
     setWallet(res.value);
   }
 
   async function onDisconnect() {
-    const sdk = getSdk();
     await sdk.wallet.disconnect();
     setWallet({ connected: false, address: null });
   }
@@ -80,26 +87,20 @@ export function Shell({ children }: { children: ReactNode }) {
         ))}
       </nav>
 
-      {busy ? (
-        <p className="mb-4 text-sm text-[var(--eclipse-accent)]" role="status">
-          {busy}
-        </p>
-      ) : null}
-      {lastErrorKind ? (
+      {errorKind ? (
         <p className="mb-4 text-sm text-[var(--eclipse-danger)]" role="alert">
-          {lastErrorKind}
-          {lastErrorMessage ? `: ${lastErrorMessage}` : ''}
+          {errorKind}
+          {errorMessage ? `: ${errorMessage}` : ''}
         </p>
       ) : null}
 
       {children}
 
-      {debugEnabled ? (
+      {debug ? (
         <footer className="mt-12 border-t border-[var(--eclipse-ink-muted)]/20 pt-4 font-mono text-xs text-[var(--eclipse-ink-muted)]">
-          <div>contract: {getContractAddress()}</div>
-          <div>chainMode: {String(chainModeEnabled)}</div>
-          <div>proofHealthy: {String(proofHealthy)}</div>
-          <div>error.kind: {lastErrorKind ?? '—'}</div>
+          <div>contract: {contractAddress}</div>
+          <div>chainMode: {String(mode === 'chain')}</div>
+          <div>error.kind: {errorKind ?? '—'}</div>
         </footer>
       ) : null}
     </GradientField>

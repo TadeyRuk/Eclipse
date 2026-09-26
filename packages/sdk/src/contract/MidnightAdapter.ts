@@ -4,7 +4,6 @@ import { err } from '../types/result';
 import { safeAsync } from '../internal/safeAsync';
 import type { ProofClient } from '../proof/ProofClient';
 import type { WalletPort } from '../wallet/WalletPort';
-import type { LaceAdapter } from '../wallet/LaceAdapter';
 import type { EclipsePort } from './EclipsePort';
 import type { ReceiptStorePort } from '../private/ReceiptStorePort';
 import { MemoryReceiptStore } from '../private/MemoryReceiptStore';
@@ -169,20 +168,13 @@ export class InMemoryEclipseTransport implements EclipseCircuitTransport {
 export class MidnightAdapter implements EclipsePort {
   private readonly proof: ProofClient;
   private readonly wallet: WalletPort;
-  private readonly lace: LaceAdapter | null;
   private readonly transport: EclipseCircuitTransport;
   private readonly contractAddress: string;
   private readonly receipts: ReceiptStorePort;
 
-  constructor(
-    proof: ProofClient,
-    wallet: WalletPort,
-    config: MidnightAdapterConfig,
-    lace?: LaceAdapter,
-  ) {
+  constructor(proof: ProofClient, wallet: WalletPort, config: MidnightAdapterConfig) {
     this.proof = proof;
     this.wallet = wallet;
-    this.lace = lace ?? null;
     this.contractAddress = config.contractAddress;
     this.transport = config.transport ?? new InMemoryEclipseTransport();
     this.receipts = config.receiptStore ?? new MemoryReceiptStore();
@@ -328,10 +320,6 @@ export class MidnightAdapter implements EclipsePort {
 
   getContractAddress(): string {
     return this.contractAddress;
-  }
-
-  getLaceApi(): ReturnType<LaceAdapter['getConnectedApi']> {
-    return this.lace?.getConnectedApi() ?? null;
   }
 }
 
