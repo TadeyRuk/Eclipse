@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { CircleCheck } from 'lucide-react';
 import { Card, Button, Tag } from '../../shared/ui';
+import { motionTokens } from '../../shared/motion/tokens';
 import { useClaims } from './useClaims';
 
 /**
@@ -65,9 +66,13 @@ export function EmployeePage() {
             return (
               <motion.li
                 key={r.slot}
+                layout
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{
+                  layout: motionTokens.spring,
+                  opacity: { delay: i * 0.05 },
+                }}
               >
                 <Card className="flex items-center justify-between gap-4 text-sm">
                   <div>
@@ -79,23 +84,26 @@ export function EmployeePage() {
                     </p>
                     {/* The amount is intentionally not displayed. */}
                   </div>
-                  {alreadyClaimed ? (
-                    <span data-testid={`claimed-${r.slot}`}>
-                      <Tag tone="accent">
-                        <CircleCheck size={12} className="mr-1 inline" />
-                        Claimed
-                      </Tag>
-                    </span>
-                  ) : (
-                    <Button
-                      testId={`claim-${r.slot}`}
-                      variant="secondary"
-                      disabled={operation !== null}
-                      onClick={() => void claim(r.slot)}
-                    >
-                      Claim
-                    </Button>
-                  )}
+                  <motion.div layout transition={motionTokens.spring}>
+                    {alreadyClaimed ? (
+                      <span data-testid={`claimed-${r.slot}`}>
+                        <Tag tone="accent">
+                          <CircleCheck size={12} className="mr-1 inline" />
+                          Claimed
+                        </Tag>
+                      </span>
+                    ) : (
+                      <Button
+                        testId={`claim-${r.slot}`}
+                        variant="secondary"
+                        disabled={operation !== null}
+                        busy={operation !== null}
+                        onClick={() => void claim(r.slot)}
+                      >
+                        Claim
+                      </Button>
+                    )}
+                  </motion.div>
                 </Card>
               </motion.li>
             );

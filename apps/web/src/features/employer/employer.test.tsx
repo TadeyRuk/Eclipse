@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { err } from '@eclipse/sdk';
+import { err, ok, type Payroll, type Result } from '@eclipse/sdk';
 import { App } from '../../app/App';
-import { createFakeRuntime } from '../../test/createFakeRuntime';
+import { createFakeRuntime, distributedPayrollFixture } from '../../test/createFakeRuntime';
 import type { EclipseRuntime } from '../../shared/runtime/EclipseRuntime';
 
 function renderApp(runtime: EclipseRuntime, path = '/employer') {
@@ -14,6 +14,16 @@ function renderApp(runtime: EclipseRuntime, path = '/employer') {
     </MemoryRouter>,
   );
 }
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 
 /** Drive recipient → deposit so the amounts step is on screen. */
 async function createAndFund(user: UserEvent) {
@@ -56,6 +66,26 @@ describe('employer lifecycle', () => {
     await user.click(screen.getByTestId('distribute'));
     await screen.findByRole('alert');
     expect(screen.getByTestId('amount-0')).toHaveValue('100');
+  });
+
+  it('animates proof chamber ceremony during distribute and settles on success', async () => {
+    const runtime = createFakeRuntime();
+    const user = userEvent.setup();
+    renderApp(runtime, '/employer');
+
+    await createAndFund(user);
+    await user.type(screen.getByTestId('amount-0'), '100');
+
+    const completion = deferred<Result<Payroll>>();
+    runtime.sdk.eclipse.distribute = () => completion.promise;
+
+    await user.click(screen.getByTestId('distribute'));
+    expect(screen.getByRole('status')).toHaveTextContent('Private amounts stay on this device');
+    expect(screen.getByTestId('proof-chamber')).toHaveAttribute('data-state', 'proving');
+
+    completion.resolve(ok(distributedPayrollFixture));
+    expect(await screen.findByTestId('distribute-success')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Private amount/i)).not.toBeInTheDocument();
   });
 });
 

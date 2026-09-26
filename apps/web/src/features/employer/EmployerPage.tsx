@@ -1,14 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { MAX_RECIPIENTS, type Payroll } from '@eclipse/sdk';
-import { Card, Button, Pill } from '../../shared/ui';
-import { useEmployerFlow, type EmployerStage } from './useEmployerFlow';
-
-const STAGE_TO_STEP: Record<EmployerStage, 'recipients' | 'deposit' | 'amounts' | 'prove'> = {
-  draft: 'recipients',
-  Created: 'deposit',
-  Funded: 'amounts',
-  Distributed: 'prove',
-};
+import { Card, Button } from '../../shared/ui';
+import { useEmployerFlow } from './useEmployerFlow';
+import { LifecycleRail } from './LifecycleRail';
+import { ProofChamber, type ProofChamberState } from './ProofChamber';
 
 export function EmployerPage() {
   const {
@@ -31,31 +26,32 @@ export function EmployerPage() {
     explorerUrl,
   } = useEmployerFlow();
 
-  const currentStep = STAGE_TO_STEP[stage];
+  const proofChamberState: ProofChamberState =
+    stage === 'Distributed'
+      ? 'success'
+      : operation === 'distribute'
+        ? 'proving'
+        : notice
+          ? 'error'
+          : 'idle';
 
   return (
     <section>
       <h2 className="display mb-2 text-3xl text-[var(--eclipse-ink-on-field)]">Employer</h2>
-      <p className="mb-8 text-[var(--eclipse-ink-muted)]">
+      <p className="mb-6 text-[var(--eclipse-ink-muted)]">
         Create → fund → distribute. Individual amounts stay private; only status and commitments
         become public.
       </p>
 
-      <div className="mb-8 flex flex-wrap gap-2">
-        {(['recipients', 'deposit', 'amounts', 'prove'] as const).map((s) => (
-          <Pill key={s} active={currentStep === s}>
-            {s}
-          </Pill>
-        ))}
-      </div>
+      <LifecycleRail stage={stage} />
 
       {operation ? (
         <p className="mb-4 text-sm text-[var(--eclipse-accent)]" role="status">
-          {operation === 'create'
-            ? 'Creating payroll…'
-            : operation === 'fund'
-              ? 'Depositing tNIGHT…'
-              : 'Proving & distributing…'}
+          {operation === 'distribute'
+            ? 'Private amounts stay on this device.'
+            : operation === 'create'
+              ? 'Creating payroll…'
+              : 'Depositing tNIGHT…'}
         </p>
       ) : null}
 
@@ -65,139 +61,163 @@ export function EmployerPage() {
         </p>
       ) : null}
 
-      <AnimatePresence mode="wait">
-        {currentStep === 'recipients' ? (
-          <motion.div
-            key="recipients"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-          >
-            <Card className="space-y-4">
-              {recipients.map((r, i) => (
-                <input
-                  key={i}
-                  data-testid={`recipient-${i}`}
-                  value={r}
-                  onChange={(e) => updateRecipient(i, e.target.value)}
-                  placeholder={`Recipient ${i + 1} address`}
-                  className="w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-sm text-[var(--eclipse-ink)]"
-                />
-              ))}
-              <div className="flex items-center gap-2">
-                {recipients.length < MAX_RECIPIENTS ? (
-                  <button
-                    type="button"
-                    className="text-sm text-[var(--eclipse-ink-muted)] underline"
-                    onClick={addRecipient}
-                  >
-                    Add recipient
-                  </button>
-                ) : null}
-                <div className="ml-auto">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+        {/* Left Column: Private Inputs & Actions */}
+        <div className="space-y-6">
+          <AnimatePresence mode="wait">
+            {stage === 'draft' ? (
+              <motion.div
+                key="recipients"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+              >
+                <Card className="space-y-4">
+                  <h3 className="text-lg font-semibold text-[var(--eclipse-ink)]">Recipients</h3>
+                  {recipients.map((r, i) => (
+                    <input
+                      key={i}
+                      data-testid={`recipient-${i}`}
+                      value={r}
+                      onChange={(e) => updateRecipient(i, e.target.value)}
+                      placeholder={`Recipient ${i + 1} address`}
+                      className="w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-sm text-[var(--eclipse-ink)]"
+                    />
+                  ))}
+                  <div className="flex items-center gap-2">
+                    {recipients.length < MAX_RECIPIENTS ? (
+                      <button
+                        type="button"
+                        className="text-sm text-[var(--eclipse-ink-muted)] underline"
+                        onClick={addRecipient}
+                      >
+                        Add recipient
+                      </button>
+                    ) : null}
+                    <div className="ml-auto">
+                      <Button
+                        testId="create-payroll"
+                        disabled={!wallet.connected || operation !== null}
+                        busy={operation === 'create'}
+                        onClick={() => void createPayroll()}
+                      >
+                        Create payroll
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ) : null}
+
+            {stage === 'Created' ? (
+              <motion.div
+                key="deposit"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+              >
+                <Card className="space-y-4">
+                  <h3 className="text-lg font-semibold text-[var(--eclipse-ink)]">Deposit</h3>
+                  <label className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
+                    Deposit total (public)
+                    <input
+                      data-testid="deposit-input"
+                      value={deposit}
+                      onChange={(e) => setDeposit(e.target.value)}
+                      className="mt-1 w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-[var(--eclipse-ink)]"
+                    />
+                  </label>
+                  <p className="text-xs text-[var(--eclipse-ink-muted-on-surface)]">
+                    Lace moves this much tNIGHT into the contract. The deposit total is public by
+                    design; individual amounts stay private.
+                  </p>
                   <Button
-                    testId="create-payroll"
-                    disabled={!wallet.connected || operation !== null}
-                    onClick={() => void createPayroll()}
+                    testId="fund-payroll"
+                    disabled={operation !== null}
+                    busy={operation === 'fund'}
+                    onClick={() => void fundPayroll()}
                   >
-                    Create payroll
+                    Deposit tNIGHT
                   </Button>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        ) : null}
+                </Card>
+              </motion.div>
+            ) : null}
 
-        {currentStep === 'deposit' ? (
-          <motion.div
-            key="deposit"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-          >
-            <Card className="space-y-4">
-              <label className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
-                Deposit total (public)
-                <input
-                  data-testid="deposit-input"
-                  value={deposit}
-                  onChange={(e) => setDeposit(e.target.value)}
-                  className="mt-1 w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-[var(--eclipse-ink)]"
-                />
-              </label>
-              <p className="text-xs text-[var(--eclipse-ink-muted-on-surface)]">
-                Lace moves this much tNIGHT into the contract. The deposit total is public by
-                design; individual amounts stay private.
-              </p>
-              <Button
-                testId="fund-payroll"
-                disabled={operation !== null}
-                onClick={() => void fundPayroll()}
+            {stage === 'Funded' ? (
+              <motion.div
+                key="amounts"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
               >
-                Deposit tNIGHT
-              </Button>
-            </Card>
-          </motion.div>
-        ) : null}
+                <Card className="space-y-4">
+                  <h3 className="text-lg font-semibold text-[var(--eclipse-ink)]">Private Amounts</h3>
+                  <p className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">
+                    Private amounts for {activeRecipients.length} recipient(s). Sum must equal {deposit}.
+                  </p>
+                  {activeRecipients.map((_, i) => (
+                    <label key={i} className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
+                      Private amount {i + 1}
+                      <input
+                        data-testid={`amount-${i}`}
+                        value={amounts[i] ?? ''}
+                        onChange={(e) => updateAmount(i, e.target.value)}
+                        className="mt-1 w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-[var(--eclipse-ink)]"
+                      />
+                    </label>
+                  ))}
+                  <Button
+                    testId="distribute"
+                    disabled={operation !== null}
+                    busy={operation === 'distribute'}
+                    onClick={() => void distribute()}
+                  >
+                    Prove &amp; distribute
+                  </Button>
+                </Card>
+              </motion.div>
+            ) : null}
 
-        {currentStep === 'amounts' ? (
-          <motion.div
-            key="amounts"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-          >
-            <Card className="space-y-4">
-              <p className="text-sm text-[var(--eclipse-ink-muted-on-surface)]">
-                Private amounts for {activeRecipients.length} recipient(s). Sum must equal {deposit}
-                .
-              </p>
-              {activeRecipients.map((_, i) => (
-                <label key={i} className="block text-sm text-[var(--eclipse-ink-muted-on-surface)]">
-                  Private amount {i + 1}
-                  <input
-                    data-testid={`amount-${i}`}
-                    value={amounts[i] ?? ''}
-                    onChange={(e) => updateAmount(i, e.target.value)}
-                    className="mt-1 w-full rounded-full border border-black/10 bg-black/5 px-4 py-2 font-mono text-[var(--eclipse-ink)]"
-                  />
-                </label>
-              ))}
-              <Button
-                testId="distribute"
-                disabled={operation !== null}
-                onClick={() => void distribute()}
+            {stage === 'Distributed' && payroll ? (
+              <motion.div
+                key="distributed"
+                data-testid="distribute-success"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="space-y-4"
               >
-                Prove &amp; distribute
-              </Button>
-            </Card>
-          </motion.div>
-        ) : null}
+                <Card className="bg-[var(--eclipse-accent)] text-[var(--eclipse-ink)]">
+                  <p className="font-medium">Distributed. Private amounts cleared from this view.</p>
+                </Card>
+                <a
+                  className="inline-block text-sm text-[var(--eclipse-ink-on-field)] underline"
+                  href={explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open Preprod explorer
+                </a>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
 
-        {currentStep === 'prove' && payroll ? (
-          <motion.div
-            key="prove"
-            data-testid="distribute-success"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="space-y-4"
-          >
-            <Card className="bg-[var(--eclipse-accent)] text-[var(--eclipse-ink)]">
-              <p className="font-medium">Distributed. Private amounts cleared from this view.</p>
-            </Card>
-            <PublicPayrollCard payroll={payroll} />
-            <a
-              className="inline-block text-sm text-[var(--eclipse-ink-on-field)] underline"
-              href={explorerUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open Preprod explorer
-            </a>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+        {/* Right Column: Proof Chamber (Observes Ceremony) */}
+        <div>
+          <ProofChamber
+            recipientCount={activeRecipients.length}
+            state={proofChamberState}
+          />
+        </div>
+      </div>
+
+      {/* Public Payroll Snapshot below workspace when active */}
+      {payroll ? (
+        <div className="mt-8">
+          <PublicPayrollCard payroll={payroll} />
+        </div>
+      ) : null}
     </section>
   );
 }

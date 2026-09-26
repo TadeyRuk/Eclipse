@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Users, Wallet } from 'lucide-react';
 import { Card, Tag, StatChip } from '../../shared/ui';
+import { motionTokens } from '../../shared/motion/tokens';
 import { usePublicPayroll } from './usePublicPayroll';
 
 export function ObserverPage() {
@@ -37,8 +38,10 @@ export function ObserverPage() {
         </p>
       ) : (
         <motion.div
+          layout
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={motionTokens.spring}
           className="space-y-4"
         >
           <div className="flex flex-wrap gap-2">
